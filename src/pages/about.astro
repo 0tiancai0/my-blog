@@ -1,0 +1,47 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="关于"
+  description="关于我和这个博客"
+>
+  <article class="max-w-2xl mx-auto py-12">
+    <h1 class="text-3xl sm:text-4xl font-extrabold mb-8">👤 关于我</h1>
+
+    <div class="prose">
+      <p>
+        你好！我是一名热爱技术的开发者，喜欢探索新事物，记录学习过程中的思考与收获。
+      </p>
+
+      <h2>关于这个博客</h2>
+      <p>
+        这个博客使用了以下技术栈构建：
+      </p>
+      <ul>
+        <li><strong>Astro</strong> — 现代化的静态网站框架，极快的页面加载速度</li>
+        <li><strong>TinaCMS</strong> — Git-based 内容管理系统，支持在线可视化编辑</li>
+        <li><strong>Giscus</strong> — 基于 GitHub Discussions 的评论系统</li>
+        <li><strong>Upstash Redis</strong> — 驱动文章点赞功能</li>
+        <li><strong>Vercel</strong> — 全球 CDN 部署，自动 SSL</li>
+      </ul>
+
+      <h2>联系方式</h2>
+      <ul>
+        <li>GitHub: <a href="https://github.com" target="_blank">github.com</a></li>
+        <li>Email: hello@example.com</li>
+      </ul>
+
+      <h2>博客主题</h2>
+      <p>
+        主要关注以下方向：
+      </p>
+      <ul>
+        <li>🌐 Web 前端开发 (React, Vue, Astro)</li>
+        <li>⚡ 全栈开发 (Node.js, TypeScript)</li>
+        <li>🛠️ 工具与效率提升</li>
+        <li>📝 技术笔记与教程</li>
+      </ul>
+    </div>
+  </article>
+</BaseLayout>

@@ -1,0 +1,101 @@
+<!--
+  Giscus 评论组件
+  使用 GitHub Discussions 存储评论，需在仓库中启用 Discussions 并安装 Giscus App
+  配置参数请在 https://giscus.app 获取
+-->
+<div class="mt-16 pt-8 border-t border-[var(--color-border)]" id="comments">
+  <h3 class="text-xl font-bold mb-6">评论</h3>
+
+  <!-- Giscus container -->
+  <div class="giscus"></div>
+</div>
+
+<script>
+  // ========================================
+  // 🔧 配置: 在 https://giscus.app 获取你的参数
+  // ========================================
+  const GISCUS_CONFIG = {
+    repo: 'YOUR_USERNAME/YOUR_REPO',    // 替换为你的 GitHub 仓库
+    repoId: 'R_kgDOxxxxx',               // 替换为你的仓库 ID
+    category: 'Announcements',           // Discussion 分类
+    categoryId: 'DIC_kwDOxxxxx',         // 替换为你的分类 ID
+    mapping: 'pathname',
+    reactionsEnabled: '1',
+    emitMetadata: '0',
+    inputPosition: 'top',
+    lang: 'zh-CN',
+    loading: 'lazy',
+  };
+
+  // 获取当前主题
+  function getTheme() {
+    if (typeof window === 'undefined') return 'light';
+    return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  }
+
+  // 加载 Giscus
+  function loadGiscus(theme: string) {
+    const container = document.querySelector('.giscus');
+    if (!container) return;
+
+    // 清空并重建
+    container.innerHTML = '';
+
+    const script = document.createElement('script');
+    script.src = 'https://giscus.app/client.js';
+    script.setAttribute('data-repo', GISCUS_CONFIG.repo);
+    script.setAttribute('data-repo-id', GISCUS_CONFIG.repoId);
+    script.setAttribute('data-category', GISCUS_CONFIG.category);
+    script.setAttribute('data-category-id', GISCUS_CONFIG.categoryId);
+    script.setAttribute('data-mapping', GISCUS_CONFIG.mapping);
+    script.setAttribute('data-reactions-enabled', GISCUS_CONFIG.reactionsEnabled);
+    script.setAttribute('data-emit-metadata', GISCUS_CONFIG.emitMetadata);
+    script.setAttribute('data-input-position', GISCUS_CONFIG.inputPosition);
+    script.setAttribute('data-lang', GISCUS_CONFIG.lang);
+    script.setAttribute('data-loading', GISCUS_CONFIG.loading);
+    script.setAttribute('data-theme', theme);
+    script.setAttribute('crossorigin', 'anonymous');
+    script.async = true;
+
+    container.appendChild(script);
+  }
+
+  // 初始加载
+  document.addEventListener('DOMContentLoaded', () => {
+    // 只在配置了仓库的情况下加载（避免报错）
+    if (GISCUS_CONFIG.repo !== 'YOUR_USERNAME/YOUR_REPO') {
+      loadGiscus(getTheme());
+    }
+  });
+
+  // 监听主题切换
+  window.addEventListener('themechange', () => {
+    const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+    if (iframe?.contentWindow) {
+      iframe.contentWindow.postMessage(
+        { giscus: { setConfig: { theme: getTheme() } } },
+        'https://giscus.app'
+      );
+    }
+  });
+</script>
+
+<!-- 未配置提示 -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (GISCUS_CONFIG.repo === 'YOUR_USERNAME/YOUR_REPO') {
+      const container = document.querySelector('.giscus');
+      if (container) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-[var(--color-muted)] border-2 border-dashed border-[var(--color-border)] rounded-xl">
+            <p class="mb-2">💬 评论功能尚未配置</p>
+            <p class="text-sm">
+              前往 <a href="https://giscus.app" class="text-[var(--color-primary)] underline" target="_blank">giscus.app</a>
+              获取配置参数，然后修改 <code class="bg-[var(--color-code)] px-1 rounded">src/components/Comments.astro</code>
+            </p>
+          </div>
+        `;
+      }
+    }
+  });
+</script>

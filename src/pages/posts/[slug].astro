@@ -1,0 +1,100 @@
+---
+import { getEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Comments from '../../components/Comments.astro';
+import LikeButton from '../../components/LikeButton.astro';
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return new Response('Not Found', { status: 404 });
+}
+
+const post = await getEntry('posts', slug);
+if (!post) {
+  return new Response('Not Found', { status: 404 });
+}
+
+const { title, description, pubDate, tags, heroImage } = post.data;
+const { Content } = await post.render();
+
+const dateStr = pubDate
+  ? new Date(pubDate).toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  : '';
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  image={heroImage}
+>
+  <article class="max-w-3xl mx-auto">
+    <!-- Header -->
+    <header class="mb-10">
+      <!-- Tags -->
+      {tags && tags.length > 0 && (
+        <div class="flex flex-wrap gap-2 mb-4">
+          {tags.map(tag => (
+            <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-medium">
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <h1 class="text-3xl sm:text-4xl font-extrabold mb-4 leading-tight">
+        {title}
+      </h1>
+
+      {description && (
+        <p class="text-lg text-[var(--color-muted)] mb-4">
+          {description}
+        </p>
+      )}
+
+      <div class="flex items-center gap-4 text-sm text-[var(--color-muted)]">
+        {dateStr && (
+          <time datetime={pubDate?.toISOString()}>
+            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            {dateStr}
+          </time>
+        )}
+
+        <!-- Reading time estimate -->
+        <span class="flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {Math.max(1, Math.ceil((post.body?.length || 0) / 800))} 分钟阅读
+        </span>
+      </div>
+    </header>
+
+    <!-- Cover Image -->
+    {heroImage && (
+      <img
+        src={heroImage}
+        alt={title}
+        class="w-full rounded-xl mb-10 object-cover max-h-96"
+        loading="lazy"
+      />
+    )}
+
+    <!-- Content -->
+    <div class="prose">
+      <Content />
+    </div>
+
+    <!-- Like Button -->
+    <LikeButton slug={post.slug} />
+
+    <!-- Comments -->
+    <Comments />
+  </article>
+</BaseLayout>

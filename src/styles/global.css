@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-bg: #ffffff;
+    --color-text: #1a1a2e;
+    --color-primary: #4f46e5;
+    --color-primary-hover: #4338ca;
+    --color-muted: #6b7280;
+    --color-border: #e5e7eb;
+    --color-card: #ffffff;
+    --color-code: #1e293b;
+  }
+
+  .dark {
+    --color-bg: #0f172a;
+    --color-text: #e2e8f0;
+    --color-primary: #818cf8;
+    --color-primary-hover: #6366f1;
+    --color-muted: #94a3b8;
+    --color-border: #334155;
+    --color-card: #1e293b;
+    --color-code: #0f172a;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-[var(--color-bg)] text-[var(--color-text)] transition-colors duration-200;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* 文章内容排版 */
+.prose {
+  @apply max-w-none;
+}
+
+.prose h1 { @apply text-3xl font-bold mt-10 mb-4; }
+.prose h2 { @apply text-2xl font-bold mt-8 mb-3; }
+.prose h3 { @apply text-xl font-semibold mt-6 mb-2; }
+.prose p  { @apply my-4 leading-relaxed; }
+.prose ul { @apply list-disc pl-6 my-4; }
+.prose ol { @apply list-decimal pl-6 my-4; }
+.prose li { @apply my-1; }
+.prose a  { @apply text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] underline; }
+.prose blockquote {
+  @apply border-l-4 border-[var(--color-primary)] pl-4 my-4 italic text-[var(--color-muted)];
+}
+.prose code {
+  @apply bg-[var(--color-code)] text-[var(--color-primary)] px-1.5 py-0.5 rounded text-sm font-mono;
+}
+.prose pre {
+  @apply bg-[var(--color-code)] rounded-lg p-4 my-4 overflow-x-auto;
+}
+.prose pre code {
+  @apply bg-transparent text-[var(--color-text)] p-0;
+}
+.prose img {
+  @apply rounded-lg my-6 mx-auto max-w-full;
+}
+.prose hr {
+  @apply border-[var(--color-border)] my-8;
+}
+.prose table {
+  @apply w-full border-collapse my-4;
+}
+.prose th { @apply border border-[var(--color-border)] px-4 py-2 bg-[var(--color-card)] font-semibold; }
+.prose td { @apply border border-[var(--color-border)] px-4 py-2; }
