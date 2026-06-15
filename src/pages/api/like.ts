@@ -1,12 +1,13 @@
 ---
 // 点赞 API - Upstash Redis
+import type { APIRoute } from 'astro';
 import { getRedis } from '../../lib/redis';
 
 export const prerender = false;
 
 const redis = getRedis();
 
-export async function GET( request: Request ) {
+export const GET: APIRoute = async ({ request }) => {
   try {
     const url = new URL(request.url);
     const slug = url.searchParams.get('slug');
@@ -36,9 +37,9 @@ export async function GET( request: Request ) {
       headers: { 'Content-Type': 'application/json' },
     });
   }
-}
+};
 
-export async function POST({ request }: { request: Request }) {
+export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
     const slug = body?.slug;
@@ -59,7 +60,8 @@ export async function POST({ request }: { request: Request }) {
     const alreadyLiked = await redis.get(rateKey);
 
     if (alreadyLiked) {
-      return new Response(JSON.stringify({ error: 'already liked', likes: await redis.get<number>(`likes:${safeSlug}`) || 0 }), {
+      const currentLikes = await redis.get<number>(`likes:${safeSlug}`) || 0;
+      return new Response(JSON.stringify({ error: 'already liked', likes: currentLikes }), {
         status: 429,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -82,4 +84,4 @@ export async function POST({ request }: { request: Request }) {
       headers: { 'Content-Type': 'application/json' },
     });
   }
-}
+};
