@@ -1,4 +1,3 @@
----
 // 点赞 API - Upstash Redis
 import type { APIRoute } from 'astro';
 import { getRedis } from '../../lib/redis';
