@@ -6,7 +6,7 @@ export const prerender = false;
 
 const redis = getRedis();
 
-export async function GET({ request }: { request: Request }) {
+export async function GET( request: Request ) {
   try {
     const url = new URL(request.url);
     const slug = url.searchParams.get('slug');
