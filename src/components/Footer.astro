@@ -1,23 +1,40 @@
-<footer class="border-t border-[var(--color-border)] py-8 mt-16">
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center text-sm text-[var(--color-muted)]">
-    <div class="flex items-center justify-center gap-4 mb-3">
-      <a href="/rss.xml" class="hover:text-[var(--color-text)] transition-colors" title="RSS 订阅">
-        <svg class="w-4 h-4 inline" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M6.18 15.64a2.18 2.18 0 010 4.36 2.18 2.18 0 010-4.36M4 4.44A15.56 15.56 0 0119.56 20h-2.83A12.73 12.73 0 004 7.27V4.44m0 5.66a9.9 9.9 0 019.9 9.9h-2.83A7.07 7.07 0 004 12.93V10.1z"/>
-        </svg>
-        RSS
-      </a>
-      <span>·</span>
-      <a href="https://github.com" class="hover:text-[var(--color-text)] transition-colors" target="_blank" rel="noopener">
-        GitHub
-      </a>
-      <span>·</span>
-      <span>&copy; {new Date().getFullYear()} 我的博客</span>
+<footer class="border-t border-[var(--c-border)] bg-[var(--c-bg-alt)] mt-16">
+  <div class="max-w-[var(--content-width)] mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
+      <!-- Brand -->
+      <div>
+        <a href="/" class="flex items-center gap-2 font-bold text-lg text-[var(--c-text)] no-underline mb-2">
+          <span class="w-7 h-7 rounded-lg bg-[var(--c-primary)] text-white flex items-center justify-center text-xs font-extrabold">B</span>
+          我的博客
+        </a>
+        <p class="text-sm text-[var(--c-text-muted)]">记录技术思考与生活感悟</p>
+      </div>
+
+      <!-- Links -->
+      <div>
+        <h4 class="text-sm font-semibold mb-3">导航</h4>
+        <div class="flex flex-col gap-2 text-sm text-[var(--c-text-muted)]">
+          <a href="/" class="hover:text-[var(--c-text)] transition-colors no-underline">首页</a>
+          <a href="/#posts" class="hover:text-[var(--c-text)] transition-colors no-underline">文章</a>
+          <a href="/about" class="hover:text-[var(--c-text)] transition-colors no-underline">关于</a>
+        </div>
+      </div>
+
+      <!-- Contact -->
+      <div>
+        <h4 class="text-sm font-semibold mb-3">联系</h4>
+        <div class="flex flex-col gap-2 text-sm text-[var(--c-text-muted)]">
+          <a href="https://github.com/0tiancai0" class="hover:text-[var(--c-text)] transition-colors no-underline" target="_blank" rel="noopener">
+            <svg class="w-4 h-4 inline mr-1.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub
+          </a>
+          <a href="/rss.xml" class="hover:text-[var(--c-text)] transition-colors no-underline">RSS 订阅</a>
+        </div>
+      </div>
     </div>
-    <p>
-      基于 <a href="https://astro.build" class="hover:text-[var(--color-text)] transition-colors">Astro</a> +
-      <a href="https://tina.io" class="hover:text-[var(--color-text)] transition-colors">TinaCMS</a> 构建 ·
-      部署在 <a href="https://vercel.com" class="hover:text-[var(--color-text)] transition-colors">Vercel</a>
-    </p>
+
+    <div class="mt-8 pt-6 border-t border-[var(--c-border)] text-center text-xs text-[var(--c-text-soft)]">
+      &copy; {new Date().getFullYear()} 我的博客 · Powered by Astro · Deployed on Vercel
+    </div>
   </div>
 </footer>

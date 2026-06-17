@@ -7,64 +7,60 @@ const posts = await getCollection('posts', ({ data }) => {
   return import.meta.env.PROD ? !data.draft : true;
 });
 
-// Sort by date, newest first
 const sortedPosts = posts.sort(
   (a, b) => new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime()
 );
 ---
 
-<BaseLayout
-  title="我的博客"
-  description="个人博客 — 记录技术思考与生活感悟"
->
-  <!-- Hero Section -->
-  <section class="text-center py-12 sm:py-20">
-    <h1 class="text-4xl sm:text-5xl font-extrabold mb-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-      欢迎来到我的博客 👋
-    </h1>
-    <p class="text-lg text-[var(--color-muted)] max-w-2xl mx-auto">
-      这里记录着我的技术探索、项目实践与生活思考。
-      欢迎阅读、评论和交流。
-    </p>
-    <div class="mt-8 flex items-center justify-center gap-4">
-      <a
-        href="/about"
-        class="px-6 py-2.5 rounded-full bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] transition-colors no-underline font-medium text-sm"
-      >
-        了解更多
-      </a>
-      <a
-        href="#posts"
-        class="px-6 py-2.5 rounded-full border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-border)] transition-colors no-underline font-medium text-sm"
-      >
-        阅读文章
-      </a>
+<BaseLayout title="我的博客" description="个人博客 — 记录技术思考与生活感悟">
+
+  <!-- Hero -->
+  <section class="py-16 sm:py-24 text-center">
+    <div class="animate-in animate-in-1">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--c-primary-bg)] text-[var(--c-primary)] text-xs font-medium mb-6">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--c-primary)] opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-[var(--c-primary)]"></span>
+        </span>
+        博客已上线
+      </div>
+
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight mb-4">
+        欢迎来到
+        <span class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent"> 我的博客</span>
+      </h1>
+
+      <p class="text-lg text-[var(--c-text-muted)] max-w-xl mx-auto mb-8">
+        这里记录着我的技术探索、项目实践与生活思考。
+        欢迎阅读、评论和交流。
+      </p>
+
+      <div class="flex items-center justify-center gap-3">
+        <a href="#posts" class="btn btn-primary">📝 阅读文章</a>
+        <a href="/about" class="btn btn-outline">👤 关于我</a>
+      </div>
     </div>
   </section>
 
-  <!-- Posts Section -->
-  <section id="posts" class="mt-8">
-    <div class="flex items-center justify-between mb-8">
-      <h2 class="text-2xl font-bold">
-        📝 最新文章
-      </h2>
-      <span class="text-sm text-[var(--color-muted)]">
-        共 {sortedPosts.length} 篇
-      </span>
+  <!-- Posts -->
+  <section id="posts" class="pb-16">
+    <div class="flex items-end justify-between mb-8 animate-in animate-in-2">
+      <div>
+        <h2 class="text-2xl font-bold">📝 最新文章</h2>
+        <p class="text-sm text-[var(--c-text-muted)] mt-1">共 {sortedPosts.length} 篇</p>
+      </div>
     </div>
 
     {sortedPosts.length === 0 ? (
-      <div class="text-center py-16 text-[var(--color-muted)]">
-        <p class="text-4xl mb-4">📭</p>
+      <div class="text-center py-20 text-[var(--c-text-muted)] animate-in animate-in-3">
+        <div class="text-5xl mb-4">📭</div>
         <p class="text-lg mb-2">还没有文章</p>
-        <p class="text-sm">
-          前往 <a href="/admin" class="text-[var(--color-primary)] underline">管理后台</a> 发布第一篇文章吧！
-        </p>
+        <p class="text-sm">前往 <a href="/admin" class="text-[var(--c-primary)] underline">管理后台</a> 发布第一篇文章</p>
       </div>
     ) : (
-      <div class="grid gap-6 sm:grid-cols-2">
-        {sortedPosts.map(post => (
-          <PostCard post={post} />
+      <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {sortedPosts.map((post, i) => (
+          <PostCard post={post} index={i} />
         ))}
       </div>
     )}

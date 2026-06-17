@@ -1,66 +1,46 @@
 ---
-const navItems = [
+const nav = [
   { label: '首页', href: '/' },
   { label: '博客', href: '/#posts' },
   { label: '关于', href: '/about' },
 ];
 ---
 
-<header class="sticky top-0 z-50 bg-[var(--color-bg)]/80 backdrop-blur-md border-b border-[var(--color-border)]">
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+<header class="sticky top-0 z-50 h-16 border-b border-[var(--c-border)] bg-[var(--c-bg)]/80 backdrop-blur-xl supports-[backdrop-filter]:bg-[var(--c-bg)]/60">
+  <div class="max-w-[var(--content-width)] mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
     <!-- Logo -->
-    <a href="/" class="text-xl font-bold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors no-underline">
-      🏠 我的博客
+    <a href="/" class="flex items-center gap-2 font-bold text-lg text-[var(--c-text)] no-underline hover:text-[var(--c-primary)] transition-colors">
+      <span class="w-8 h-8 rounded-lg bg-[var(--c-primary)] text-white flex items-center justify-center text-sm font-extrabold">B</span>
+      我的博客
     </a>
 
-    <!-- Nav -->
-    <nav class="hidden sm:flex items-center gap-6">
-      {navItems.map(item => (
+    <!-- Desktop Nav -->
+    <nav class="hidden sm:flex items-center gap-1">
+      {nav.map(item => (
         <a
           href={item.href}
-          class="text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors no-underline text-sm font-medium"
+          class="px-3 py-2 rounded-lg text-sm font-medium text-[var(--c-text-muted)] hover:text-[var(--c-text)] hover:bg-[var(--c-bg-alt)] transition-all no-underline"
         >
           {item.label}
         </a>
       ))}
     </nav>
 
-    <!-- Right: Theme + Admin -->
-    <div class="flex items-center gap-3">
-      <!-- Theme Toggle -->
+    <!-- Actions -->
+    <div class="flex items-center gap-2">
       <button
         onclick="window.toggleTheme?.()"
-        class="p-2 rounded-lg text-[var(--color-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-border)] transition-colors cursor-pointer"
+        class="btn-ghost rounded-lg p-2 cursor-pointer"
         aria-label="切换主题"
         title="切换亮/暗主题"
       >
-        <!-- Sun icon (shown in dark mode) -->
-        <svg class="hidden dark:block w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-        </svg>
-        <!-- Moon icon (shown in light mode) -->
-        <svg class="block dark:hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-        </svg>
+        <svg class="hidden dark:block w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        <svg class="block dark:hidden w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
       </button>
 
-      <!-- Admin link -->
-      <a
-        href="/admin"
-        class="text-sm px-3 py-1.5 rounded-lg bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] transition-colors no-underline font-medium"
-      >
+      <a href="/admin" class="btn btn-primary text-sm !px-3 !py-1.5 no-underline">
         管理
       </a>
-
-      <!-- Mobile menu trigger -->
-      <button
-        class="sm:hidden p-2 rounded-lg text-[var(--color-muted)] hover:text-[var(--color-text)] cursor-pointer"
-        aria-label="菜单"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
     </div>
   </div>
 </header>

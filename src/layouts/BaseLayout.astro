@@ -6,11 +6,13 @@ export interface Props {
   title: string;
   description?: string;
   image?: string;
+  noIndex?: boolean;
 }
 
-const { title, description, image } = Astro.props;
+const { title, description, image, noIndex } = Astro.props;
 const siteTitle = '我的博客';
 const fullTitle = title === siteTitle ? title : `${title} | ${siteTitle}`;
+const defaultDesc = '个人博客 — 记录技术思考与生活感悟';
 ---
 
 <!doctype html>
@@ -19,52 +21,34 @@ const fullTitle = title === siteTitle ? title : `${title} | ${siteTitle}`;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml" />
+    {noIndex && <meta name="robots" content="noindex" />}
 
     <title>{fullTitle}</title>
-    <meta name="description" content={description || '个人博客 — 记录技术与生活'} />
+    <meta name="description" content={description || defaultDesc} />
 
-    <!-- Open Graph -->
     <meta property="og:title" content={fullTitle} />
-    <meta property="og:description" content={description || '个人博客 — 记录技术与生活'} />
+    <meta property="og:description" content={description || defaultDesc} />
     <meta property="og:type" content={Astro.url.pathname.startsWith('/posts/') ? 'article' : 'website'} />
     <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site).href} />
     {image && <meta property="og:image" content={image} />}
-
-    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={fullTitle} />
 
-    <!-- Theme detection -->
     <script is:inline>
-      (function() {
-        const theme = localStorage.getItem('theme');
-        if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-          document.documentElement.classList.add('dark');
-        }
-      })();
+      (function(){var t=localStorage.getItem('theme');(t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches))&&document.documentElement.classList.add('dark')})();
     </script>
   </head>
-  <body class="min-h-screen flex flex-col">
+  <body class="min-h-screen flex flex-col bg-[var(--c-bg)] text-[var(--c-text)]">
     <Header />
-
-    <main class="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-8">
+    <main class="flex-1 w-full">
       <slot />
     </main>
-
     <Footer />
-
-    <!-- Theme toggle -->
     <script>
-      function toggleTheme() {
-        const html = document.documentElement;
-        html.classList.toggle('dark');
-        localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
-        // Notify Giscus to update theme
+      window.toggleTheme = () => {
+        document.documentElement.classList.toggle('dark');
+        localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
         window.dispatchEvent(new CustomEvent('themechange'));
-      }
-      // Expose for header button
-      window.toggleTheme = toggleTheme;
+      };
     </script>
   </body>
 </html>

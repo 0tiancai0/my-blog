@@ -3,58 +3,53 @@ import type { CollectionEntry } from 'astro:content';
 
 interface Props {
   post: CollectionEntry<'posts'>;
+  index?: number;
 }
 
-const { post } = Astro.props;
-const { slug } = post;
+const { post, index = 0 } = Astro.props;
 const { title, description, pubDate, tags } = post.data;
 
 const dateStr = pubDate
-  ? new Date(pubDate).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
+  ? new Date(pubDate).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
   : '';
 ---
 
-<article class="group border border-[var(--color-border)] rounded-xl p-6 hover:border-[var(--color-primary)]/40 hover:shadow-md transition-all duration-300 bg-[var(--color-card)]">
-  <a href={`/posts/${slug}`} class="no-underline">
+<article
+  class="card group animate-in"
+  class:list={[`animate-in-${Math.min(index + 1, 5)}`]}
+>
+  <a href={`/posts/${post.slug}`} class="block p-6 no-underline">
     <!-- Tags -->
     {tags && tags.length > 0 && (
-      <div class="flex flex-wrap gap-2 mb-3">
+      <div class="flex flex-wrap gap-1.5 mb-3">
         {tags.map(tag => (
-          <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-medium">
-            {tag}
-          </span>
+          <span class="tag">{tag}</span>
         ))}
       </div>
     )}
 
     <!-- Title -->
-    <h2 class="text-xl font-bold mb-2 group-hover:text-[var(--color-primary)] transition-colors">
+    <h2 class="text-lg font-bold text-[var(--c-text)] mb-2 group-hover:text-[var(--c-primary)] transition-colors leading-snug">
       {title}
     </h2>
 
     <!-- Description -->
     {description && (
-      <p class="text-[var(--color-muted)] text-sm mb-4 line-clamp-2">
+      <p class="text-sm text-[var(--c-text-muted)] mb-4 line-clamp-2 leading-relaxed">
         {description}
       </p>
     )}
 
-    <!-- Meta -->
-    <div class="flex items-center gap-3 text-xs text-[var(--color-muted)]">
+    <!-- Meta footer -->
+    <div class="flex items-center justify-between text-xs text-[var(--c-text-soft)]">
       {dateStr && (
-        <time datetime={pubDate?.toISOString()}>
-          <svg class="w-3.5 h-3.5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
+        <time datetime={pubDate?.toISOString()} class="flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
           {dateStr}
         </time>
       )}
-      <span class="group-hover:text-[var(--color-primary)] transition-colors font-medium">
-        阅读更多 →
+      <span class="font-medium text-[var(--c-primary)] group-hover:translate-x-1 transition-transform inline-flex items-center gap-0.5">
+        阅读 <span class="hidden sm:inline">文章</span> →
       </span>
     </div>
   </a>

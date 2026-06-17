@@ -22,3 +22,7 @@ Thumbs.db
 
 # TinaCMS
 .tina/__generated__/_graphql.json
+
+# Server
+server/node_modules/
+server/data/

@@ -1,124 +1,86 @@
 ---
-// 点赞按钮 - 客户端交互组件
-interface Props {
-  slug: string;
-}
-
+// 点赞按钮 — 调用阿里云 API
+interface Props { slug: string }
 const { slug } = Astro.props;
 ---
 
-<div class="like-button-container flex items-center gap-3 my-8 pt-6 border-t border-[var(--color-border)]" data-slug={slug}>
+<div class="like-area flex items-center gap-3 my-10 pt-6 border-t border-[var(--c-border)]" data-slug={slug}>
   <button
     id="like-btn"
-    class="group flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--color-border)] hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+    class="group flex items-center gap-2 px-5 py-2.5 rounded-full border border-[var(--c-border)] bg-[var(--c-surface)] hover:border-pink-300 hover:bg-pink-50 dark:hover:bg-pink-950/20 transition-all duration-200 cursor-pointer disabled:opacity-70 disabled:cursor-default"
     aria-label="点赞"
   >
-    <!-- Heart icon -->
     <svg
       id="like-icon"
-      class="w-5 h-5 text-[var(--color-muted)] group-hover:text-red-500 transition-colors"
+      class="w-5 h-5 text-[var(--c-text-soft)] group-hover:text-pink-500 transition-colors"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
     >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-      />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
     </svg>
-
-    <span id="like-count" class="text-sm font-medium text-[var(--color-muted)] group-hover:text-red-500 transition-colors">
-      --
-    </span>
+    <span id="like-count" class="text-sm font-semibold text-[var(--c-text-muted)] group-hover:text-pink-500 transition-colors">--</span>
   </button>
-
-  <span id="like-status" class="text-xs text-[var(--color-muted)] hidden"></span>
+  <span id="like-msg" class="text-xs text-[var(--c-text-soft)] hidden"></span>
 </div>
 
 <script>
-  (function () {
-    const container = document.querySelector<HTMLElement>('.like-button-container');
-    if (!container) return;
+  const container = document.querySelector<HTMLElement>('.like-area');
+  if (!container) throw new Error('No .like-area');
+  const slug = container.dataset.slug!;
+  const KEY = `liked:${slug}`;
+  const API_BASE = (import.meta as any).env?.PUBLIC_API_URL || 'http://localhost:3456';
 
-    const slug = container.dataset.slug;
-    if (!slug) return;
+  const btn = document.getElementById('like-btn') as HTMLButtonElement;
+  const countEl = document.getElementById('like-count')!;
+  const iconEl = document.getElementById('like-icon')!;
+  const msgEl = document.getElementById('like-msg')!;
 
-    const btn = document.getElementById('like-btn') as HTMLButtonElement;
-    const countEl = document.getElementById('like-count');
-    const iconEl = document.getElementById('like-icon');
-    const statusEl = document.getElementById('like-status');
+  function markLiked() {
+    btn.classList.add('!border-pink-300', '!bg-pink-50', 'dark:!bg-pink-950/20');
+    iconEl.classList.add('text-pink-500');
+    iconEl.setAttribute('fill', 'currentColor');
+    countEl.classList.add('text-pink-500');
+    btn.disabled = true;
+  }
 
-    const LIKED_KEY = `liked:${slug}`;
-
-    // 检查是否已点赞
-    function hasLiked(): boolean {
-      return localStorage.getItem(LIKED_KEY) === 'true';
-    }
-
-    // 更新按钮状态
-    function updateUI(liked: boolean) {
-      if (liked) {
-        btn.classList.add('liked');
-        btn.classList.add('border-red-300', 'bg-red-50', 'dark:bg-red-950/30');
-        iconEl.classList.add('text-red-500');
-        iconEl.setAttribute('fill', 'currentColor');
-        countEl?.classList.add('text-red-500');
-        btn.disabled = true;
+  // Load count
+  (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/likes?slug=${encodeURIComponent(slug)}`);
+      if (res.ok) {
+        const { likes } = await res.json();
+        countEl.textContent = String(likes);
       }
-    }
-
-    // 获取点赞数
-    async function fetchLikes(): Promise<void> {
-      try {
-        const res = await fetch(`/api/like?slug=${encodeURIComponent(slug)}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (countEl) countEl.textContent = String(data.likes || 0);
-        }
-      } catch {
-        if (countEl) countEl.textContent = '0';
-      }
-    }
-
-    // 点赞
-    async function doLike(): Promise<void> {
-      if (hasLiked()) return;
-
-      try {
-        const res = await fetch('/api/like', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug }),
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          if (countEl) countEl.textContent = String(data.likes);
-          localStorage.setItem(LIKED_KEY, 'true');
-          updateUI(true);
-        } else if (res.status === 429) {
-          // 已被限流 (重复点赞)
-          localStorage.setItem(LIKED_KEY, 'true');
-          updateUI(true);
-          if (statusEl) {
-            statusEl.textContent = '已点赞';
-            statusEl.classList.remove('hidden');
-          }
-        }
-      } catch (err) {
-        // 离线降级: 允许本地点赞
-        const current = parseInt(countEl?.textContent || '0') || 0;
-        if (countEl) countEl.textContent = String(current + 1);
-        localStorage.setItem(LIKED_KEY, 'true');
-        updateUI(true);
-      }
-    }
-
-    // 初始化
-    fetchLikes();
-    if (hasLiked()) updateUI(true);
-    btn?.addEventListener('click', doLike);
+    } catch { countEl.textContent = '0'; }
+    if (localStorage.getItem(KEY) === 'true') markLiked();
   })();
+
+  btn.addEventListener('click', async () => {
+    if (localStorage.getItem(KEY) === 'true') return;
+    try {
+      const res = await fetch(`${API_BASE}/api/likes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        countEl.textContent = String(data.likes);
+        localStorage.setItem(KEY, 'true');
+        markLiked();
+      } else if (res.status === 429) {
+        // Already liked (server-side)
+        countEl.textContent = String(data.likes);
+        localStorage.setItem(KEY, 'true');
+        markLiked();
+      }
+    } catch {
+      // Offline fallback: increment locally
+      countEl.textContent = String(parseInt(countEl.textContent || '0') + 1);
+      localStorage.setItem(KEY, 'true');
+      markLiked();
+    }
+  });
 </script>
