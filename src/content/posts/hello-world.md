@@ -22,8 +22,9 @@ heroImage: ''
 
 - **Astro** — 极快的静态网站框架，支持 SSR
 - **TinaCMS** — 在线可视化编辑，写完就能发布
-- **Giscus** — 基于 GitHub Discussions 的评论系统
-- **Upstash Redis** — 文章点赞功能
+- **Giscus** — 基于 GitHub Discussions 的评论系统，登录即关联 GitHub 账号
+- **Upstash Redis + Vercel Serverless** — 文章点赞功能，全球低延迟
+- **Vercel Blob** — 文件上传与存储
 
 ## 后续计划
 

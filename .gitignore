@@ -26,3 +26,7 @@ Thumbs.db
 # Server
 server/node_modules/
 server/data/
+
+.vercel
+deploy.tar.gz
+fix-hostname.cjs

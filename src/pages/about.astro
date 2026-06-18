@@ -1,23 +1,15 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import FileUpload from '../components/FileUpload.astro';
 ---
 
 <BaseLayout title="关于" description="关于我和这个博客">
   <div class="max-w-[var(--prose-width)] mx-auto py-16 animate-in animate-in-1">
     <h1 class="text-3xl sm:text-4xl font-extrabold mb-2">👤 关于我</h1>
-    <p class="text-[var(--c-text-muted)] mb-10">一个热爱技术的开发者</p>
+    <p class="text-[var(--c-text-muted)] mb-10">浙江大学学生 · 技术爱好者</p>
 
     <div class="prose">
-      <p>你好！我是一名热爱技术的开发者，喜欢探索新事物，记录学习过程中的思考与收获。</p>
-
-      <h2>关于这个博客</h2>
-      <p>这个博客使用了以下技术栈构建：</p>
-      <ul>
-        <li><strong>Astro</strong> — 现代化静态网站框架，极快的页面加载速度</li>
-        <li><strong>TinaCMS</strong> — Git-based 内容管理系统，支持在线可视化编辑</li>
-        <li><strong>Fastify + SQLite</strong> — 自建评论和点赞后端，部署在阿里云</li>
-        <li><strong>Vercel</strong> — 全球 CDN 部署，自动 SSL</li>
-      </ul>
+      <p>你好！我是浙江大学的学生，喜欢探索新事物，记录学习过程中的思考与收获。这个博客用来分享我的学习笔记和技术心得。</p>
 
       <h2>博客主题</h2>
       <ul>
@@ -27,11 +19,34 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <li>📝 技术笔记与教程</li>
       </ul>
 
+      <h2>关于这个博客</h2>
+      <ul>
+        <li><strong>Astro</strong> + <strong>TinaCMS</strong> — 内容管理与编辑</li>
+        <li><strong>Giscus</strong> — GitHub 账号评论系统</li>
+        <li><strong>Upstash Redis</strong> — 点赞（Serverless）</li>
+        <li><strong>Vercel Blob</strong> — 文件上传</li>
+      </ul>
+
       <h2>联系我</h2>
       <ul>
         <li>GitHub: <a href="https://github.com/0tiancai0" target="_blank" rel="noopener">@0tiancai0</a></li>
         <li>Email: <a href="mailto:hello@example.com">hello@example.com</a></li>
       </ul>
+
+      <blockquote>
+        <p>💡 想修改这些内容？编辑 <code>src/pages/about.astro</code> 文件，或者通过 <a href="/admin">TinaCMS 管理后台</a> 在线修改。</p>
+      </blockquote>
+    </div>
+
+    <!-- 文件上传 -->
+    <div class="mt-16 pt-8 border-t border-[var(--c-border)]">
+      <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+        <svg class="w-5 h-5 text-[var(--c-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+        </svg>
+        文件分享
+      </h3>
+      <FileUpload />
     </div>
   </div>
 </BaseLayout>

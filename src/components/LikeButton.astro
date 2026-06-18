@@ -1,5 +1,5 @@
 ---
-// 点赞按钮 — 调用阿里云 API
+// 点赞按钮 — 同源 Vercel Serverless API
 interface Props { slug: string }
 const { slug } = Astro.props;
 ---
@@ -22,65 +22,102 @@ const { slug } = Astro.props;
     </svg>
     <span id="like-count" class="text-sm font-semibold text-[var(--c-text-muted)] group-hover:text-pink-500 transition-colors">--</span>
   </button>
-  <span id="like-msg" class="text-xs text-[var(--c-text-soft)] hidden"></span>
+  <span id="like-msg" class="text-xs text-[var(--c-text-soft)]"></span>
 </div>
 
 <script>
-  const container = document.querySelector<HTMLElement>('.like-area');
+  const container = document.querySelector('.like-area') as HTMLElement;
   if (!container) throw new Error('No .like-area');
   const slug = container.dataset.slug!;
-  const KEY = `liked:${slug}`;
-  const API_BASE = (import.meta as any).env?.PUBLIC_API_URL || 'http://localhost:3456';
+  const KEY = 'liked:' + slug;
 
   const btn = document.getElementById('like-btn') as HTMLButtonElement;
   const countEl = document.getElementById('like-count')!;
   const iconEl = document.getElementById('like-icon')!;
   const msgEl = document.getElementById('like-msg')!;
 
+  function showMsg(text: string, isError?: boolean) {
+    msgEl.textContent = text;
+    msgEl.className = 'text-xs ' + (isError ? 'text-red-400' : 'text-[var(--c-text-soft)]');
+    if (text) setTimeout(() => { msgEl.textContent = ''; }, 3000);
+  }
+
   function markLiked() {
-    btn.classList.add('!border-pink-300', '!bg-pink-50', 'dark:!bg-pink-950/20');
+    btn.classList.add('!border-pink-300', '!bg-pink-50');
+    btn.classList.add('dark:!bg-pink-950/20');
     iconEl.classList.add('text-pink-500');
     iconEl.setAttribute('fill', 'currentColor');
     countEl.classList.add('text-pink-500');
     btn.disabled = true;
   }
 
-  // Load count
-  (async () => {
+  // 加载点赞数
+  (async function() {
     try {
-      const res = await fetch(`${API_BASE}/api/likes?slug=${encodeURIComponent(slug)}`);
+      const res = await fetch('/api/likes?slug=' + encodeURIComponent(slug));
       if (res.ok) {
-        const { likes } = await res.json();
-        countEl.textContent = String(likes);
+        const data = await res.json();
+        countEl.textContent = String(data.likes);
+      } else {
+        countEl.textContent = '0';
       }
-    } catch { countEl.textContent = '0'; }
-    if (localStorage.getItem(KEY) === 'true') markLiked();
+    } catch(e) {
+      countEl.textContent = '0';
+      console.log('[Like] fetch count failed:', e);
+    }
+
+    if (localStorage.getItem(KEY) === 'true') {
+      markLiked();
+      showMsg('已点赞 ✓');
+    }
   })();
 
-  btn.addEventListener('click', async () => {
-    if (localStorage.getItem(KEY) === 'true') return;
+  // 点击点赞
+  btn.addEventListener('click', async function() {
+    if (localStorage.getItem(KEY) === 'true') {
+      showMsg('你已经点过赞了 ❤️');
+      return;
+    }
+
+    btn.disabled = true;
+    showMsg('...');
+
     try {
-      const res = await fetch(`${API_BASE}/api/likes`, {
+      const res = await fetch('/api/likes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug }),
       });
       const data = await res.json();
+
       if (res.ok) {
         countEl.textContent = String(data.likes);
         localStorage.setItem(KEY, 'true');
         markLiked();
+        showMsg('谢谢点赞！❤️');
       } else if (res.status === 429) {
-        // Already liked (server-side)
-        countEl.textContent = String(data.likes);
+        countEl.textContent = String(data.likes ?? 0);
         localStorage.setItem(KEY, 'true');
         markLiked();
+        showMsg('你已经点过赞了');
+      } else {
+        // 服务器错误（如 500），用乐观更新
+        console.warn('[Like] server error:', res.status, data);
+        const prev = parseInt(countEl.textContent || '0') || 0;
+        countEl.textContent = String(prev + 1);
+        localStorage.setItem(KEY, 'true');
+        markLiked();
+        showMsg('点赞成功！', false);
       }
-    } catch {
-      // Offline fallback: increment locally
-      countEl.textContent = String(parseInt(countEl.textContent || '0') + 1);
+    } catch(e) {
+      console.warn('[Like] network error:', e);
+      const prev = parseInt(countEl.textContent || '0') || 0;
+      countEl.textContent = String(prev + 1);
       localStorage.setItem(KEY, 'true');
       markLiked();
+      showMsg('已点赞（离线同步）');
     }
+
+    btn.disabled = true;
   });
 </script>

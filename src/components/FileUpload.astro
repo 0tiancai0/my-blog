@@ -1,0 +1,159 @@
+---
+// 文件上传组件 — 拖拽/点击上传文件到 Vercel Blob
+---
+
+<div class="file-upload-widget" id="file-upload-widget">
+  <div
+    id="drop-zone"
+    class="relative p-8 rounded-xl border-2 border-dashed border-[var(--c-border)] bg-[var(--c-bg-alt)] transition-all duration-200 cursor-pointer hover:border-[var(--c-primary)] hover:bg-[var(--c-primary-bg)]/30"
+  >
+    <div class="flex flex-col items-center gap-3">
+      <!-- Upload icon -->
+      <svg class="w-10 h-10 text-[var(--c-text-soft)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+      </svg>
+      <div class="text-center">
+        <p class="text-sm font-medium text-[var(--c-text-muted)]">
+          拖拽文件到此处，或 <span class="text-[var(--c-primary)] underline">点击选择</span>
+        </p>
+        <p class="text-xs text-[var(--c-text-soft)] mt-1">
+          支持图片 (PNG/JPEG/GIF/WebP/SVG)、PDF、文本、压缩包，最大 10MB
+        </p>
+      </div>
+    </div>
+
+    <input
+      id="file-input"
+      type="file"
+      class="absolute inset-0 opacity-0 cursor-pointer"
+      accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml,application/pdf,text/plain,text/markdown,application/zip,application/gzip,application/x-tar,application/json,text/csv"
+      multiple
+    />
+  </div>
+
+  <!-- Upload progress -->
+  <div id="upload-progress" class="mt-4 hidden">
+    <div class="flex items-center gap-3">
+      <div class="flex-1 h-2 rounded-full bg-[var(--c-border)] overflow-hidden">
+        <div id="progress-bar" class="h-full bg-[var(--c-primary)] rounded-full transition-all duration-300" style="width: 0%"></div>
+      </div>
+      <span id="progress-text" class="text-xs text-[var(--c-text-muted)]">0%</span>
+    </div>
+    <p id="upload-status" class="text-xs text-[var(--c-text-muted)] mt-2"></p>
+  </div>
+
+  <!-- Uploaded files list -->
+  <div id="files-list" class="mt-4 space-y-2 hidden"></div>
+</div>
+
+<script>
+  const dropZone = document.getElementById('drop-zone')!;
+  const fileInput = document.getElementById('file-input') as HTMLInputElement;
+  const progressDiv = document.getElementById('upload-progress')!;
+  const progressBar = document.getElementById('progress-bar')!;
+  const progressText = document.getElementById('progress-text')!;
+  const uploadStatus = document.getElementById('upload-status')!;
+  const filesList = document.getElementById('files-list')!;
+
+  // 点击触发文件选择
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  // 拖拽事件
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('!border-[var(--c-primary)]', '!bg-[var(--c-primary-bg)]/50');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('!border-[var(--c-primary)]', '!bg-[var(--c-primary-bg)]/50');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('!border-[var(--c-primary)]', '!bg-[var(--c-primary-bg)]/50');
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) uploadFiles(files);
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files && fileInput.files.length > 0) uploadFiles(fileInput.files);
+  });
+
+  async function uploadFiles(fileList: FileList) {
+    const files = Array.from(fileList);
+    progressDiv.classList.remove('hidden');
+    filesList.classList.remove('hidden');
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const percent = Math.round(((i) / files.length) * 100);
+      progressBar.style.width = percent + '%';
+      progressText.textContent = percent + '%';
+      uploadStatus.textContent = `正在上传: ${file.name} (${formatSize(file.size)})`;
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          addFileToList(file.name, data.url, file.type);
+        } else {
+          addFileToList(file.name, null, file.type, data.error || '上传失败');
+        }
+      } catch (err) {
+        addFileToList(file.name, null, file.type, '网络错误');
+      }
+    }
+
+    // 完成
+    progressBar.style.width = '100%';
+    progressText.textContent = '100%';
+    uploadStatus.textContent = '✅ 上传完成';
+    fileInput.value = '';
+
+    // 3 秒后隐藏进度条
+    setTimeout(() => {
+      progressDiv.classList.add('hidden');
+      progressBar.style.width = '0%';
+      progressText.textContent = '0%';
+    }, 3000);
+  }
+
+  function addFileToList(name: string, url: string | null, type: string, error?: string) {
+    const item = document.createElement('div');
+    item.className = 'flex items-center gap-3 p-3 rounded-lg bg-[var(--c-bg-alt)] border border-[var(--c-border)]';
+
+    if (error) {
+      item.innerHTML = `
+        <span class="text-red-500 shrink-0">❌</span>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium truncate">${escapeHtml(name)}</p>
+          <p class="text-xs text-red-500">${escapeHtml(error)}</p>
+        </div>`;
+    } else {
+      const isImage = type.startsWith('image/');
+      item.innerHTML = `
+        <span class="shrink-0">${isImage ? '🖼️' : '📄'}</span>
+        <div class="flex-1 min-w-0">
+          <a href="${url}" target="_blank" rel="noopener" class="text-sm font-medium text-[var(--c-primary)] hover:underline truncate block">${escapeHtml(name)}</a>
+          ${isImage ? `<img src="${url}" alt="${escapeHtml(name)}" class="mt-2 rounded-lg max-h-32 object-cover" loading="lazy" />` : ''}
+        </div>
+        <button onclick="navigator.clipboard.writeText('${url}')" class="btn-ghost text-xs !px-2 !py-1 shrink-0" title="复制链接">📋</button>`;
+    }
+    filesList.appendChild(item);
+  }
+
+  function escapeHtml(str: string) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function formatSize(bytes: number) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+</script>

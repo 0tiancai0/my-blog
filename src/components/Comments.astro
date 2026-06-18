@@ -1,134 +1,76 @@
 ---
-// 自建评论组件 — 调用阿里云 API
+// Giscus 评论组件 — 基于 GitHub Discussions，自动关联 GitHub 账号
 interface Props { slug: string }
 const { slug } = Astro.props;
+
+// 从服务端环境变量读取 Giscus 配置
+const repoId = import.meta.env.GISCUS_REPO_ID || '';
+const category = import.meta.env.GISCUS_CATEGORY || 'Announcements';
+const categoryId = import.meta.env.GISCUS_CATEGORY_ID || '';
+const configured = !!(repoId && categoryId);
 ---
 
 <div class="mt-16 pt-8 border-t border-[var(--c-border)]" id="comments">
   <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
-    <svg class="w-5 h-5 text-[var(--c-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+    <svg class="w-5 h-5 text-[var(--c-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+    </svg>
     评论
   </h3>
 
-  <!-- Comment Form -->
-  <form id="comment-form" class="space-y-3 mb-8 p-5 rounded-xl bg-[var(--c-bg-alt)] border border-[var(--c-border)]">
-    <div class="flex gap-3">
-      <input
-        id="comment-author"
-        type="text"
-        placeholder="昵称"
-        maxlength="50"
-        required
-        class="w-32 px-3 py-2 rounded-lg border border-[var(--c-border)] bg-[var(--c-surface)] text-sm text-[var(--c-text)] placeholder:text-[var(--c-text-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--c-primary)]/30 focus:border-[var(--c-primary)] transition"
-      />
-      <textarea
-        id="comment-content"
-        placeholder="写下你的想法..."
-        rows="3"
-        required
-        class="flex-1 px-3 py-2 rounded-lg border border-[var(--c-border)] bg-[var(--c-surface)] text-sm text-[var(--c-text)] placeholder:text-[var(--c-text-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--c-primary)]/30 focus:border-[var(--c-primary)] transition resize-none"
-      ></textarea>
+  {configured ? (
+    <div class="giscus"></div>
+  ) : (
+    <div class="p-8 rounded-xl bg-[var(--c-bg-alt)] border border-[var(--c-border)] text-center">
+      <p class="text-[var(--c-text-muted)] text-sm mb-4">
+        ⚙️ 评论系统尚未配置
+      </p>
+      <div class="text-xs text-[var(--c-text-soft)] text-left max-w-md mx-auto space-y-1.5">
+        <p class="font-semibold text-[var(--c-text-muted)] mb-2">Giscus 配置步骤：</p>
+        <p>1. 仓库 Settings → Features → 开启 <strong>Discussions</strong></p>
+        <p>2. 安装 <a href="https://github.com/apps/giscus" class="text-[var(--c-primary)] underline" target="_blank">Giscus App</a></p>
+        <p>3. 访问 <a href="https://giscus.app/zh-CN" class="text-[var(--c-primary)] underline" target="_blank">giscus.app</a> 填入仓库 0tiancai0/my-blog，获取 ID</p>
+        <p>4. 将 <code>GISCUS_REPO_ID</code> 和 <code>GISCUS_CATEGORY_ID</code> 添加到 Vercel 环境变量</p>
+      </div>
     </div>
-    <div class="flex justify-end">
-      <button type="submit" class="btn btn-primary text-sm !px-4 !py-2">发表评论</button>
-    </div>
-    <p id="comment-msg" class="text-xs text-[var(--c-text-muted)] hidden"></p>
-  </form>
-
-  <!-- Comments List -->
-  <div id="comments-list" class="space-y-4">
-    <p class="text-sm text-[var(--c-text-soft)] text-center py-8">加载中...</p>
-  </div>
+  )}
 </div>
 
+<!-- 通过 data 属性将服务端配置传给客户端 JS -->
+<div
+  id="giscus-config"
+  data-repo-id={repoId}
+  data-category-id={categoryId}
+  data-category={category}
+  hidden
+></div>
+
 <script>
-  const slug = {JSON.stringify(slug)};
-  const API_BASE = (import.meta as any).env?.PUBLIC_API_URL || 'http://localhost:3456';
+  const config = document.getElementById('giscus-config');
+  const repoId = config?.dataset.repoId;
+  const categoryId = config?.dataset.categoryId;
+  const category = config?.dataset.category || 'Announcements';
 
-  async function api<T>(path: string, options?: RequestInit): Promise<T> {
-    const res = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-    });
-    if (!res.ok) { const err = await res.json().catch(() => ({ error: 'Network error' })); throw new Error(err.error); }
-    return res.json();
-  }
-
-  function timeAgo(dateStr: string): string {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return '刚刚';
-    if (mins < 60) return `${mins} 分钟前`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours} 小时前`;
-    const days = Math.floor(hours / 24);
-    if (days < 30) return `${days} 天前`;
-    return new Date(dateStr).toLocaleDateString('zh-CN');
-  }
-
-  function renderComment(c: any): string {
-    return `
-      <div class="flex gap-3 p-4 rounded-xl bg-[var(--c-bg-alt)] border border-[var(--c-border)] animate-in">
-        <div class="w-8 h-8 rounded-full bg-[var(--c-primary-bg)] text-[var(--c-primary)] flex items-center justify-center text-xs font-bold shrink-0">${escapeHtml(c.author).charAt(0).toUpperCase()}</div>
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-sm font-semibold">${escapeHtml(c.author)}</span>
-            <span class="text-xs text-[var(--c-text-soft)]">${timeAgo(c.createdAt)}</span>
-          </div>
-          <p class="text-sm text-[var(--c-text)] whitespace-pre-wrap">${escapeHtml(c.content)}</p>
-        </div>
-      </div>`;
-  }
-
-  function escapeHtml(str: string): string {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  async function loadComments() {
-    const list = document.getElementById('comments-list')!;
-    try {
-      const { comments } = await api<{ comments: any[] }>(`/api/comments?slug=${encodeURIComponent(slug)}`);
-      if (comments.length === 0) {
-        list.innerHTML = '<p class="text-sm text-[var(--c-text-soft)] text-center py-8">暂无评论，来抢沙发吧 🛋️</p>';
-      } else {
-        list.innerHTML = comments.map(renderComment).join('');
-      }
-    } catch {
-      list.innerHTML = '<p class="text-sm text-[var(--c-text-soft)] text-center py-8">评论加载失败，请确认 API 服务已启动</p>';
+  if (repoId && categoryId) {
+    const container = document.querySelector('#comments .giscus');
+    if (container) {
+      const script = document.createElement('script');
+      script.src = 'https://giscus.app/client.js';
+      script.setAttribute('data-repo', '0tiancai0/my-blog');
+      script.setAttribute('data-repo-id', repoId);
+      script.setAttribute('data-category', category);
+      script.setAttribute('data-category-id', categoryId);
+      script.setAttribute('data-mapping', 'pathname');
+      script.setAttribute('data-strict', '0');
+      script.setAttribute('data-reactions-enabled', '1');
+      script.setAttribute('data-emit-metadata', '0');
+      script.setAttribute('data-input-position', 'top');
+      script.setAttribute('data-theme', 'preferred_color_scheme');
+      script.setAttribute('data-lang', 'zh-CN');
+      script.setAttribute('data-loading', 'lazy');
+      script.setAttribute('crossorigin', 'anonymous');
+      script.async = true;
+      container.appendChild(script);
     }
   }
-
-  document.getElementById('comment-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const author = (document.getElementById('comment-author') as HTMLInputElement).value.trim();
-    const content = (document.getElementById('comment-content') as HTMLTextAreaElement).value.trim();
-    const msg = document.getElementById('comment-msg')!;
-
-    if (!author || !content) { msg.textContent = '请填写昵称和评论内容'; msg.classList.remove('hidden'); return; }
-
-    const btn = (e.target as HTMLFormElement).querySelector('button')!;
-    btn.disabled = true; btn.textContent = '发送中...';
-    msg.classList.add('hidden');
-
-    try {
-      await api('/api/comments', { method: 'POST', body: JSON.stringify({ slug, author, content }) });
-      (document.getElementById('comment-author') as HTMLInputElement).value = '';
-      (document.getElementById('comment-content') as HTMLTextAreaElement).value = '';
-      localStorage.setItem(`comment_author_${slug}`, author);
-      await loadComments();
-    } catch (err: any) {
-      msg.textContent = err.message || '发送失败，请重试';
-      msg.classList.remove('hidden');
-    } finally {
-      btn.disabled = false; btn.textContent = '发表评论';
-    }
-  });
-
-  // Restore saved author name
-  const savedAuthor = localStorage.getItem(`comment_author_${slug}`);
-  if (savedAuthor) (document.getElementById('comment-author') as HTMLInputElement).value = savedAuthor;
-
-  loadComments();
 </script>

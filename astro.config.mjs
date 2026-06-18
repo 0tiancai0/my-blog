@@ -1,13 +1,13 @@
 import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
-import vercel from '@astrojs/vercel';
+import node from '@astrojs/node';
 import sitemap from '@astrojs/sitemap';
 import tina from '@tinacms/astro/integration';
 
 export default defineConfig({
   output: 'server',
-  adapter: vercel(),
-  site: process.env.SITE_URL || 'https://my-blog.vercel.app',
+  adapter: node({ mode: 'standalone' }),
+  site: process.env.SITE_URL || 'http://106.14.22.212',
   integrations: [
     sitemap(),
     tina(),
