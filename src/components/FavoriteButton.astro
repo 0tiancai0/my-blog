@@ -1,0 +1,126 @@
+---
+interface Props { slug: string; title?: string }
+const { slug, title = '' } = Astro.props;
+const API_BASE = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3456';
+---
+
+<div class="favorite-area flex items-center gap-3 my-4" data-slug={slug} data-title={title}>
+  <button
+    id="fav-btn"
+    class="group flex items-center gap-2 px-5 py-2.5 rounded-full border border-[var(--c-border)] bg-[var(--c-surface)] hover:border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-all duration-200 cursor-pointer"
+    aria-label="收藏"
+  >
+    <svg
+      id="fav-icon"
+      class="w-5 h-5 text-[var(--c-text-soft)] group-hover:text-amber-500 transition-colors"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+    </svg>
+    <span id="fav-text" class="text-sm font-medium text-[var(--c-text-muted)] group-hover:text-amber-500 transition-colors">
+      收藏
+    </span>
+  </button>
+  <span id="fav-msg" class="text-xs text-[var(--c-text-soft)]"></span>
+</div>
+
+<script>
+  const API = document.getElementById('api-config')?.dataset.base || 'http://localhost:3456';
+  const container = document.querySelector('.favorite-area') as HTMLElement;
+  if (!container) throw new Error('No .favorite-area');
+  const slug = container.dataset.slug!;
+  const title = container.dataset.title || '';
+
+  const btn = document.getElementById('fav-btn') as HTMLButtonElement;
+  const icon = document.getElementById('fav-icon') as SVGElement;
+  const textEl = document.getElementById('fav-text')!;
+  const msgEl = document.getElementById('fav-msg')!;
+
+  let favorited = false;
+
+  function getToken() { return localStorage.getItem('token'); }
+
+  function showMsg(msg: string) {
+    msgEl.textContent = msg;
+    setTimeout(() => { msgEl.textContent = ''; }, 2000);
+  }
+
+  function setFavoritedState(isFav: boolean) {
+    favorited = isFav;
+    if (isFav) {
+      icon.classList.add('text-amber-500');
+      icon.setAttribute('fill', 'currentColor');
+      textEl.textContent = '已收藏';
+      textEl.classList.add('text-amber-500');
+      btn.classList.add('!border-amber-300', '!bg-amber-50', 'dark:!bg-amber-950/20');
+    } else {
+      icon.classList.remove('text-amber-500');
+      icon.setAttribute('fill', 'none');
+      textEl.textContent = '收藏';
+      textEl.classList.remove('text-amber-500');
+      btn.classList.remove('!border-amber-300', '!bg-amber-50', 'dark:!bg-amber-950/20');
+    }
+  }
+
+  // Check initial state
+  (async function init() {
+    const token = getToken();
+    if (!token) {
+      textEl.textContent = '登录后收藏';
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/api/favorites/check?slug=${encodeURIComponent(slug)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFavoritedState(data.favorited);
+      }
+    } catch { /* ignore */ }
+  })();
+
+  // Toggle favorite
+  btn.addEventListener('click', async () => {
+    const token = getToken();
+    if (!token) {
+      showMsg('请先登录');
+      window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+      return;
+    }
+
+    btn.style.pointerEvents = 'none';
+    try {
+      if (favorited) {
+        const res = await fetch(`${API}/api/favorites/${encodeURIComponent(slug)}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          setFavoritedState(false);
+          showMsg('已取消收藏');
+        }
+      } else {
+        const res = await fetch(`${API}/api/favorites`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ slug, title }),
+        });
+        if (res.ok) {
+          setFavoritedState(true);
+          showMsg('已收藏 ⭐');
+        } else if (res.status === 409) {
+          setFavoritedState(true);
+          showMsg('已收藏过了');
+        }
+      }
+    } catch (err) {
+      showMsg('操作失败');
+    }
+    btn.style.pointerEvents = 'auto';
+  });
+</script>

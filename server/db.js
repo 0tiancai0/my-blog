@@ -29,6 +29,7 @@ export async function initDB() {
   db.run('PRAGMA journal_mode = WAL');
   db.run('PRAGMA foreign_keys = ON');
 
+  // ── Comments ──
   db.run(`
     CREATE TABLE IF NOT EXISTS comments (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,9 +42,9 @@ export async function initDB() {
       FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
     )
   `);
-
   db.run(`CREATE INDEX IF NOT EXISTS idx_comments_slug ON comments(slug)`);
 
+  // ── Likes ──
   db.run(`
     CREATE TABLE IF NOT EXISTS likes (
       id    INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,7 +52,6 @@ export async function initDB() {
       count INTEGER NOT NULL DEFAULT 0
     )
   `);
-
   db.run(`
     CREATE TABLE IF NOT EXISTS like_logs (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -60,8 +60,35 @@ export async function initDB() {
       created_at  TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
     )
   `);
-
   db.run(`CREATE INDEX IF NOT EXISTS idx_likelogs_fp ON like_logs(slug, fingerprint)`);
+
+  // ── Users ──
+  db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      username   TEXT    NOT NULL UNIQUE,
+      password   TEXT    NOT NULL,
+      created_at TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
+    )
+  `);
+
+  // ── Favorites ──
+  db.run(`
+    CREATE TABLE IF NOT EXISTS favorites (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id    INTEGER NOT NULL,
+      slug       TEXT    NOT NULL,
+      title      TEXT    NOT NULL DEFAULT '',
+      created_at TEXT    NOT NULL DEFAULT (datetime('now','localtime')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      UNIQUE(user_id, slug)
+    )
+  `);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id)`);
+
+  // ── Migrations: add user_id to existing tables ──
+  try { db.run(`ALTER TABLE comments ADD COLUMN user_id INTEGER REFERENCES users(id)`); } catch { /* exists */ }
+  try { db.run(`ALTER TABLE like_logs ADD COLUMN user_id INTEGER REFERENCES users(id)`); } catch { /* exists */ }
 
   saveDB();
   console.log('  Database initialized successfully');

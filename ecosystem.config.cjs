@@ -1,35 +1,59 @@
 // PM2 进程管理配置
 module.exports = {
-  apps: [{
-    name: 'my-blog',
-    script: 'dist/server/entry.mjs',
-    cwd: '/opt/my-blog',
-    env: {
-      NODE_ENV: 'production',
-      PORT: '4321',
-      HOST: '0.0.0.0',
-      // TinaCMS
-      TINA_CLIENT_ID: 'b8e15a31-b61d-43c8-af69-4e8a26c166f1',
-      TINA_TOKEN: '96d9c1d5aa3bcd4e015875432546aca2ab1ad1ac',
-      TINA_SEARCH_TOKEN: '6de91418a446fe060839df2e21e50db649d45ddc',
-      // Upstash Redis（点赞）
-      UPSTASH_REDIS_REST_URL: 'https://evident-starling-119678.upstash.io',
-      UPSTASH_REDIS_REST_TOKEN: 'gQAAAAAAAdN-AAIgcDE5MTRhNDlhZWRkYTY0YWNiYTgzNThmZmYxMTZiMWM1Nw',
-      // Giscus（评论）
-      GISCUS_REPO_ID: 'R_kgDOS7Cb6g',
-      GISCUS_CATEGORY: 'Announcements',
-      GISCUS_CATEGORY_ID: 'DIC_kwDOS7Cb6s4C_Lji',
-      // 站点
-      SITE_URL: 'http://106.14.22.212',
+  apps: [
+    {
+      name: 'my-blog',
+      script: 'dist/server/entry.mjs',
+      cwd: '/opt/my-blog',
+      env: {
+        NODE_ENV: 'production',
+        PORT: '4321',
+        HOST: '0.0.0.0',
+        // TinaCMS
+        TINA_CLIENT_ID: process.env.TINA_CLIENT_ID || '',
+        TINA_TOKEN: process.env.TINA_TOKEN || '',
+        TINA_SEARCH_TOKEN: process.env.TINA_SEARCH_TOKEN || '',
+        // Upstash Redis（点赞 — Astro SSR 端已弃用，现在使用 Fastify API）
+        // 保留以便向后兼容
+        UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL || '',
+        UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN || '',
+        // JWT 密钥（用于 Fastify API 认证）
+        JWT_SECRET: process.env.JWT_SECRET || 'change-me-in-production',
+        // Fastify API 地址（前端通过 Nginx 代理访问，留空使用相对路径）
+        PUBLIC_API_URL: '',
+        // 站点 URL
+        SITE_URL: process.env.SITE_URL || 'http://106.14.22.212',
+      },
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '512M',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss',
+      error_file: '/var/log/my-blog/error.log',
+      out_file: '/var/log/my-blog/out.log',
+      merge_logs: true,
     },
-    instances: 1,
-    exec_mode: 'fork',
-    autorestart: true,
-    watch: false,
-    max_memory_restart: '512M',
-    log_date_format: 'YYYY-MM-DD HH:mm:ss',
-    error_file: '/var/log/my-blog/error.log',
-    out_file: '/var/log/my-blog/out.log',
-    merge_logs: true,
-  }]
+    {
+      name: 'blog-api',
+      script: 'server.js',
+      cwd: '/opt/my-blog/server',
+      env: {
+        NODE_ENV: 'production',
+        PORT: '3456',
+        HOST: '0.0.0.0',
+        JWT_SECRET: process.env.JWT_SECRET || 'change-me-in-production',
+        ADMIN_TOKEN: process.env.ADMIN_TOKEN || 'admin-secret-change-me',
+      },
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '256M',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss',
+      error_file: '/var/log/my-blog/api-error.log',
+      out_file: '/var/log/my-blog/api-out.log',
+      merge_logs: true,
+    },
+  ],
 };

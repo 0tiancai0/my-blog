@@ -1,5 +1,5 @@
 ---
-// 文件上传组件 — 拖拽/点击上传文件到 Vercel Blob
+// 文件上传组件 — 拖拽/点击上传 + 真实进度条
 ---
 
 <div class="file-upload-widget" id="file-upload-widget">
@@ -31,28 +31,13 @@
     />
   </div>
 
-  <!-- Upload progress -->
-  <div id="upload-progress" class="mt-4 hidden">
-    <div class="flex items-center gap-3">
-      <div class="flex-1 h-2 rounded-full bg-[var(--c-border)] overflow-hidden">
-        <div id="progress-bar" class="h-full bg-[var(--c-primary)] rounded-full transition-all duration-300" style="width: 0%"></div>
-      </div>
-      <span id="progress-text" class="text-xs text-[var(--c-text-muted)]">0%</span>
-    </div>
-    <p id="upload-status" class="text-xs text-[var(--c-text-muted)] mt-2"></p>
-  </div>
-
-  <!-- Uploaded files list -->
+  <!-- Files list (shown during and after upload) -->
   <div id="files-list" class="mt-4 space-y-2 hidden"></div>
 </div>
 
 <script>
   const dropZone = document.getElementById('drop-zone')!;
   const fileInput = document.getElementById('file-input') as HTMLInputElement;
-  const progressDiv = document.getElementById('upload-progress')!;
-  const progressBar = document.getElementById('progress-bar')!;
-  const progressText = document.getElementById('progress-text')!;
-  const uploadStatus = document.getElementById('upload-status')!;
   const filesList = document.getElementById('files-list')!;
 
   // 点击触发文件选择
@@ -81,79 +66,126 @@
 
   async function uploadFiles(fileList: FileList) {
     const files = Array.from(fileList);
-    progressDiv.classList.remove('hidden');
     filesList.classList.remove('hidden');
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const percent = Math.round(((i) / files.length) * 100);
-      progressBar.style.width = percent + '%';
-      progressText.textContent = percent + '%';
-      uploadStatus.textContent = `正在上传: ${file.name} (${formatSize(file.size)})`;
-
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        const res = await fetch('/api/upload', { method: 'POST', body: formData });
-        const data = await res.json();
-
-        if (res.ok && data.success) {
-          addFileToList(file.name, data.url, file.type);
-        } else {
-          addFileToList(file.name, null, file.type, data.error || '上传失败');
-        }
-      } catch (err) {
-        addFileToList(file.name, null, file.type, '网络错误');
-      }
+    for (const file of files) {
+      const itemEl = addFileItem(file.name, file.type);
+      await uploadSingle(file, itemEl);
     }
 
-    // 完成
-    progressBar.style.width = '100%';
-    progressText.textContent = '100%';
-    uploadStatus.textContent = '✅ 上传完成';
     fileInput.value = '';
-
-    // 3 秒后隐藏进度条
-    setTimeout(() => {
-      progressDiv.classList.add('hidden');
-      progressBar.style.width = '0%';
-      progressText.textContent = '0%';
-    }, 3000);
   }
 
-  function addFileToList(name: string, url: string | null, type: string, error?: string) {
+  function uploadSingle(file: File, itemEl: HTMLElement): Promise<void> {
+    return new Promise((resolve) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const xhr = new XMLHttpRequest();
+
+      // 真实上传进度
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          updateItemProgress(itemEl, pct, `上传中 ${pct}%`);
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (xhr.status >= 200 && xhr.status < 300 && data.success) {
+            updateItemSuccess(itemEl, data.url, file.type, data.deduplicated ? '(已存在，已去重)' : undefined);
+          } else {
+            updateItemError(itemEl, data.error || '上传失败');
+          }
+        } catch {
+          updateItemError(itemEl, '服务器响应异常');
+        }
+        resolve();
+      });
+
+      xhr.addEventListener('error', () => {
+        updateItemError(itemEl, '网络错误');
+        resolve();
+      });
+
+      xhr.addEventListener('abort', () => {
+        updateItemError(itemEl, '上传已取消');
+        resolve();
+      });
+
+      xhr.open('POST', '/api/upload');
+      xhr.send(formData);
+    });
+  }
+
+  // ---- DOM helpers ----
+
+  function addFileItem(name: string, type: string): HTMLElement {
     const item = document.createElement('div');
     item.className = 'flex items-center gap-3 p-3 rounded-lg bg-[var(--c-bg-alt)] border border-[var(--c-border)]';
-
-    if (error) {
-      item.innerHTML = `
-        <span class="text-red-500 shrink-0">❌</span>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium truncate">${escapeHtml(name)}</p>
-          <p class="text-xs text-red-500">${escapeHtml(error)}</p>
-        </div>`;
-    } else {
-      const isImage = type.startsWith('image/');
-      item.innerHTML = `
-        <span class="shrink-0">${isImage ? '🖼️' : '📄'}</span>
-        <div class="flex-1 min-w-0">
-          <a href="${url}" target="_blank" rel="noopener" class="text-sm font-medium text-[var(--c-primary)] hover:underline truncate block">${escapeHtml(name)}</a>
-          ${isImage ? `<img src="${url}" alt="${escapeHtml(name)}" class="mt-2 rounded-lg max-h-32 object-cover" loading="lazy" />` : ''}
+    item.innerHTML = `
+      <span class="shrink-0 text-lg">${type.startsWith('image/') ? '🖼️' : '📄'}</span>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium truncate">${escapeHtml(name)}</p>
+        <div class="mt-1 flex items-center gap-2">
+          <div class="flex-1 h-1.5 rounded-full bg-[var(--c-border)] overflow-hidden">
+            <div class="progress-fill h-full bg-[var(--c-primary)] rounded-full transition-all duration-150" style="width: 0%"></div>
+          </div>
+          <span class="progress-text text-xs text-[var(--c-text-soft)] shrink-0">等待中</span>
         </div>
-        <button onclick="navigator.clipboard.writeText('${url}')" class="btn-ghost text-xs !px-2 !py-1 shrink-0" title="复制链接">📋</button>`;
-    }
+      </div>
+    `;
     filesList.appendChild(item);
+    return item;
+  }
+
+  function updateItemProgress(item: HTMLElement, pct: number, text: string) {
+    const fill = item.querySelector('.progress-fill') as HTMLElement;
+    const txt = item.querySelector('.progress-text') as HTMLElement;
+    if (fill) fill.style.width = pct + '%';
+    if (txt) txt.textContent = text;
+  }
+
+  function updateItemSuccess(item: HTMLElement, url: string, type: string, note?: string) {
+    const isImage = type.startsWith('image/');
+    const noteHtml = note ? `<span class="text-xs text-[var(--c-text-soft)] ml-1">${escapeHtml(note)}</span>` : '';
+
+    item.innerHTML = `
+      <span class="shrink-0 text-lg">${isImage ? '🖼️' : '📄'}</span>
+      <div class="flex-1 min-w-0">
+        <a href="${url}" target="_blank" rel="noopener" class="text-sm font-medium text-[var(--c-primary)] hover:underline truncate block">${url.split('/').pop()}</a>
+        ${noteHtml}
+        ${isImage ? `<img src="${url}" alt="" class="mt-2 rounded-lg max-h-32 object-cover" loading="lazy" />` : ''}
+      </div>
+      <div class="flex items-center gap-1 shrink-0">
+        <button class="btn-copy btn-ghost text-xs !px-2 !py-1" data-url="${url}" title="复制链接">📋</button>
+        <span class="text-xs text-green-500">✅</span>
+      </div>
+    `;
+
+    // 绑定复制按钮
+    const btn = item.querySelector('.btn-copy') as HTMLButtonElement;
+    if (btn) {
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(btn.dataset.url || url).then(() => {
+          btn.textContent = '✅';
+          setTimeout(() => { btn.textContent = '📋'; }, 1500);
+        });
+      });
+    }
+  }
+
+  function updateItemError(item: HTMLElement, error: string) {
+    const fill = item.querySelector('.progress-fill') as HTMLElement;
+    if (fill) fill.classList.add('!bg-red-500');
+    updateItemProgress(item, 100, error);
   }
 
   function escapeHtml(str: string) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
-  }
-
-  function formatSize(bytes: number) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   }
 </script>

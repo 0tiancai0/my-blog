@@ -1,0 +1,260 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="搜索文章" description="搜索博客文章内容">
+  <div class="max-w-[var(--content-width)] mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <!-- Page heading -->
+    <div class="mb-10 text-center animate-in animate-in-1">
+      <h1 class="text-3xl font-extrabold text-[var(--c-text)] mb-3 tracking-tight">
+        搜索文章
+      </h1>
+      <p class="text-[var(--c-text-muted)]">
+        输入关键词，快速找到你想要的内容
+      </p>
+    </div>
+
+    <!-- Search form -->
+    <div class="max-w-2xl mx-auto animate-in animate-in-2">
+      <div class="relative mb-8">
+        <input
+          type="text"
+          id="search-input"
+          placeholder="输入关键词搜索文章..."
+          autocomplete="off"
+          class="w-full px-5 py-3.5 pl-12 text-base bg-[var(--c-surface)] border-2 border-[var(--c-border)] rounded-2xl text-[var(--c-text)] placeholder:text-[var(--c-text-soft)] outline-none transition-all focus:border-[var(--c-primary)] focus:shadow-[0_0_0_3px_rgba(99,102,241,0.15)]"
+        />
+        <!-- search icon -->
+        <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--c-text-soft)] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <!-- clear button -->
+        <button
+          id="search-clear"
+          class="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[var(--c-bg-alt)] text-[var(--c-text-muted)] flex items-center justify-center text-sm hover:text-[var(--c-text)] hover:bg-[var(--c-border)] transition-all hidden cursor-pointer border-none"
+          aria-label="清除搜索"
+        >&#10005;</button>
+      </div>
+
+      <!-- Results area -->
+      <div id="search-results" class="space-y-3"></div>
+
+      <!-- Loading -->
+      <div id="search-loading" class="text-center py-12 hidden">
+        <span class="inline-flex items-center gap-2 text-[var(--c-text-muted)]">
+          <span class="w-5 h-5 border-2 border-[var(--c-primary)] border-t-transparent rounded-full animate-spin"></span>
+          搜索中...
+        </span>
+      </div>
+
+      <!-- Empty state -->
+      <div id="search-empty" class="text-center py-12 hidden">
+        <svg class="w-14 h-14 mx-auto mb-4 text-[var(--c-text-soft)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <p class="text-lg font-medium text-[var(--c-text-muted)] mb-1">没有找到相关文章</p>
+        <p class="text-sm text-[var(--c-text-soft)]">试试其他关键词吧</p>
+      </div>
+
+      <!-- Error state -->
+      <div id="search-error" class="text-center py-12 hidden">
+        <svg class="w-14 h-14 mx-auto mb-4 text-[var(--c-text-soft)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+        </svg>
+        <p class="text-lg font-medium text-[var(--c-text-muted)] mb-1">搜索出错</p>
+        <p class="text-sm text-[var(--c-text-soft)]">请稍后再试</p>
+      </div>
+
+      <!-- Not available (dev mode / first visit before build) -->
+      <div id="search-unavailable" class="text-center py-8 hidden">
+        <div class="card p-6 inline-block text-left max-w-md">
+          <p class="text-[var(--c-text)] font-semibold mb-2">搜索索引未生成</p>
+          <p class="text-sm text-[var(--c-text-muted)] mb-3">
+            当前为开发模式，需要先构建项目以生成搜索索引：
+          </p>
+          <code class="block bg-[var(--c-code-bg)] text-[var(--c-code-text)] px-3 py-2 rounded-lg text-sm font-mono select-all">
+            npm run build
+          </code>
+          <p class="text-xs text-[var(--c-text-soft)] mt-3">
+            构建完成后运行 <code class="bg-[var(--c-bg-alt)] px-1 rounded">npm run preview</code> 即可使用搜索。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<!-- Pagefind 搜索逻辑（is:inline 绕过 Vite 打包） -->
+<script is:inline>
+  (function () {
+    var input = document.getElementById('search-input');
+    var clearBtn = document.getElementById('search-clear');
+    var resultsEl = document.getElementById('search-results');
+    var loadingEl = document.getElementById('search-loading');
+    var emptyEl = document.getElementById('search-empty');
+    var errorEl = document.getElementById('search-error');
+    var unavailableEl = document.getElementById('search-unavailable');
+
+    var pagefindReady = false;
+    var debounceTimer = null;
+
+    // ── Helpers ──
+    function esc(str) {
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function fmtDate(d) {
+      try {
+        return new Date(d).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+      } catch (_) { return d; }
+    }
+
+    // ── Wait for pagefind to become available on window ──
+    function waitForPagefind(cb) {
+      var attempts = 0;
+      var maxAttempts = 100; // 10 seconds max
+
+      function check() {
+        attempts++;
+        if (typeof window.pagefind !== 'undefined') {
+          pagefindReady = true;
+          cb(true);
+        } else if (attempts < maxAttempts) {
+          setTimeout(check, 100);
+        } else {
+          // Timeout — pagefind script didn't load
+          cb(false);
+        }
+      }
+
+      check();
+    }
+
+    // ── Perform search ──
+    async function doSearch(query) {
+      if (!pagefindReady) return;
+
+      loadingEl.classList.remove('hidden');
+      emptyEl.classList.add('hidden');
+      errorEl.classList.add('hidden');
+      resultsEl.innerHTML = '';
+
+      try {
+        var search = await window.pagefind.search(query);
+        loadingEl.classList.add('hidden');
+
+        if (!search || !search.results || search.results.length === 0) {
+          emptyEl.classList.remove('hidden');
+          return;
+        }
+
+        var results = search.results.slice(0, 10);
+        var items = await Promise.all(results.map(function (r) { return r.data(); }));
+
+        resultsEl.innerHTML = items
+          .map(function (item, i) {
+            return (
+              '<a href="' + item.url + '" class="card block p-5 no-underline group animate-in" style="animation-delay:' + (i * 0.05) + 's">' +
+              '<h3 class="text-base font-semibold text-[var(--c-text)] group-hover:text-[var(--c-primary)] transition-colors mb-2 leading-snug">' +
+              esc(item.meta ? item.meta.title || '无标题' : '无标题') +
+              '</h3>' +
+              (item.excerpt
+                ? '<p class="text-sm text-[var(--c-text-muted)] leading-relaxed line-clamp-3 mb-2">' + item.excerpt + '</p>'
+                : '') +
+              (item.meta && item.meta.date
+                ? '<time class="inline-block text-xs text-[var(--c-text-soft)]">' + fmtDate(item.meta.date) + '</time>'
+                : '') +
+              '</a>'
+            );
+          })
+          .join('');
+      } catch (err) {
+        console.error('Search error:', err);
+        loadingEl.classList.add('hidden');
+        errorEl.classList.remove('hidden');
+      }
+    }
+
+    // ── Init ──
+    waitForPagefind(function (available) {
+      if (!available) {
+        unavailableEl.classList.remove('hidden');
+      }
+    });
+
+    // ── Input events ──
+    if (input) {
+      input.addEventListener('input', function () {
+        var val = input.value;
+
+        // Toggle clear button
+        if (val.length > 0) {
+          clearBtn.classList.remove('hidden');
+        } else {
+          clearBtn.classList.add('hidden');
+        }
+
+        // Debounce search
+        clearTimeout(debounceTimer);
+        var query = val.trim();
+
+        if (!query) {
+          resultsEl.innerHTML = '';
+          emptyEl.classList.add('hidden');
+          loadingEl.classList.add('hidden');
+          errorEl.classList.add('hidden');
+          return;
+        }
+
+        if (!pagefindReady) return;
+
+        debounceTimer = setTimeout(function () {
+          doSearch(query);
+        }, 300);
+      });
+
+      // Clear button
+      if (clearBtn) {
+        clearBtn.addEventListener('click', function () {
+          input.value = '';
+          clearBtn.classList.add('hidden');
+          resultsEl.innerHTML = '';
+          emptyEl.classList.add('hidden');
+          loadingEl.classList.add('hidden');
+          errorEl.classList.add('hidden');
+          input.focus();
+        });
+      }
+    }
+  })();
+</script>
+
+<!-- 只在生产构建后加载 pagefind（dev 模式下 script 标签会 404，这是预期行为） -->
+<script is:inline src="/pagefind/pagefind.js" onerror="
+  // Pagefind not built yet — handled by JS logic above
+  this.remove();
+"></script>
+
+<style is:global>
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .animate-spin {
+    animation: spin 0.6s linear infinite;
+  }
+
+  /* Pagefind excerpt highlight marks */
+  #search-results mark {
+    background: rgba(99, 102, 241, 0.2);
+    color: var(--c-primary);
+    border-radius: 2px;
+    padding: 0.05em 0.15em;
+  }
+
+  .dark #search-results mark {
+    background: rgba(129, 140, 248, 0.25);
+  }
+</style>

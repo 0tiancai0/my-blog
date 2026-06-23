@@ -1,0 +1,110 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const API_BASE = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3456';
+---
+
+<BaseLayout title="我的收藏" description="收藏的文章">
+  <div class="max-w-[var(--content-width)] mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="mb-12 text-center animate-in animate-in-1">
+      <h1 class="text-3xl font-extrabold text-[var(--c-text)] mb-3 tracking-tight">
+        ⭐ 我的收藏
+      </h1>
+      <p class="text-[var(--c-text-muted)]">你收藏的文章都在这里</p>
+    </div>
+
+    <div id="favorites-container" class="max-w-2xl mx-auto">
+      <!-- Login prompt -->
+      <div id="login-needed" class="card p-10 text-center">
+        <p class="text-[var(--c-text-muted)] text-lg mb-4">请先登录查看收藏</p>
+        <a href="/login?redirect=/favorites" class="btn btn-primary no-underline">去登录</a>
+      </div>
+
+      <!-- Content (hidden by default) -->
+      <div id="favorites-content" class="hidden">
+        <div id="fav-loading" class="text-center py-12 text-[var(--c-text-muted)]">加载中...</div>
+        <div id="fav-list" class="space-y-3"></div>
+        <div id="fav-empty" class="hidden text-center py-12">
+          <svg class="w-16 h-16 mx-auto mb-4 text-[var(--c-text-soft)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+          </svg>
+          <p class="text-lg font-medium text-[var(--c-text-muted)] mb-1">还没有收藏的文章</p>
+          <p class="text-sm text-[var(--c-text-soft)]">浏览博客时点击收藏按钮即可添加到此处</p>
+          <a href="/" class="btn btn-outline text-sm mt-4 no-underline">去发现文章</a>
+        </div>
+        <div id="fav-error" class="hidden text-center py-12 text-red-400">加载失败，请刷新重试</div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  (function() {
+    const API = document.getElementById('api-config')?.dataset.base || 'http://localhost:3456';
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      document.getElementById('login-needed')?.classList.remove('hidden');
+      return;
+    }
+
+    document.getElementById('login-needed')?.classList.add('hidden');
+    document.getElementById('favorites-content')?.classList.remove('hidden');
+
+    loadFavorites();
+
+    async function loadFavorites() {
+      const loading = document.getElementById('fav-loading')!;
+      const list = document.getElementById('fav-list')!;
+      const empty = document.getElementById('fav-empty')!;
+      const error = document.getElementById('fav-error')!;
+
+      try {
+        const res = await fetch(API + '/api/favorites', {
+          headers: { Authorization: 'Bearer ' + token },
+        });
+        if (!res.ok) throw new Error('failed');
+        const data = await res.json();
+
+        loading.classList.add('hidden');
+
+        if (!data.favorites?.length) {
+          empty.classList.remove('hidden');
+          return;
+        }
+
+        list.innerHTML = data.favorites.map((fav: any, i: number) => `
+          <a href="/posts/${fav.slug}" class="card flex items-center justify-between p-5 no-underline group animate-in" style="animation-delay:${i * 0.05}s">
+            <div class="flex-1 min-w-0">
+              <h3 class="text-base font-semibold text-[var(--c-text)] group-hover:text-[var(--c-primary)] transition-colors truncate">
+                ${fav.title || fav.slug}
+              </h3>
+              <time class="text-xs text-[var(--c-text-soft)] mt-1">
+                收藏于 ${new Date(fav.createdAt + 'Z').toLocaleDateString('zh-CN')}
+              </time>
+            </div>
+            <button
+              class="ml-4 text-sm text-[var(--c-text-soft)] hover:text-red-400 transition-colors shrink-0 cursor-pointer border-none bg-transparent"
+              onclick="event.preventDefault(); removeFav('${fav.slug}', this.closest('a'))"
+              title="取消收藏"
+            >✕</button>
+          </a>
+        `).join('');
+
+        // Global function for remove button
+        (window as any)._removeFav = async function(slug: string, el: HTMLElement) {
+          await fetch(API + '/api/favorites/' + encodeURIComponent(slug), {
+            method: 'DELETE',
+            headers: { Authorization: 'Bearer ' + token },
+          });
+          el.style.opacity = '0';
+          el.style.transform = 'translateX(20px)';
+          el.style.transition = 'all 0.3s ease';
+          setTimeout(() => { el.remove(); if (!list.children.length) { empty.classList.remove('hidden'); } }, 300);
+        };
+      } catch {
+        loading.classList.add('hidden');
+        error.classList.remove('hidden');
+      }
+    }
+  })();
+</script>

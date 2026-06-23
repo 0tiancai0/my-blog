@@ -28,6 +28,18 @@ const nav = [
 
     <!-- Actions -->
     <div class="flex items-center gap-2">
+      <!-- Search -->
+      <a
+        href="/search"
+        class="btn-ghost rounded-lg p-2"
+        aria-label="搜索文章"
+        title="搜索"
+      >
+        <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+      </a>
+
       <button
         onclick="window.toggleTheme?.()"
         class="btn-ghost rounded-lg p-2 cursor-pointer"
@@ -38,9 +50,88 @@ const nav = [
         <svg class="block dark:hidden w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
       </button>
 
+      <!-- User menu (client-side rendered) -->
+      <div id="user-menu" class="flex items-center">
+        <a href="/login" id="login-link" class="btn btn-outline text-sm !px-3 !py-1.5 no-underline">
+          登录
+        </a>
+        <div id="user-dropdown" class="hidden relative">
+          <button id="user-btn" class="btn-ghost rounded-lg px-3 py-1.5 text-sm font-medium flex items-center gap-1.5 cursor-pointer">
+            <span id="user-name-display"></span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div id="dropdown-menu" class="hidden absolute right-0 top-full mt-1 w-40 bg-[var(--c-surface)] border border-[var(--c-border)] rounded-xl shadow-lg py-1 z-50">
+            <a href="/favorites" class="block px-4 py-2 text-sm text-[var(--c-text)] hover:bg-[var(--c-bg-alt)] no-underline">
+              ❤️ 我的收藏
+            </a>
+            <hr class="my-1 border-[var(--c-border)]" />
+            <button id="logout-btn" class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-[var(--c-bg-alt)] cursor-pointer border-none bg-transparent">
+              退出登录
+            </button>
+          </div>
+        </div>
+      </div>
+
       <a href="/admin" class="btn btn-primary text-sm !px-3 !py-1.5 no-underline">
         管理
       </a>
     </div>
   </div>
 </header>
+
+<script>
+  // ── User state management ──
+  function getUser() {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return null;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return { id: payload.sub, username: payload.username };
+    } catch {
+      return null;
+    }
+  }
+
+  function updateUI() {
+    const user = getUser();
+    const loginLink = document.getElementById('login-link');
+    const dropdown = document.getElementById('user-dropdown');
+    const nameDisplay = document.getElementById('user-name-display');
+
+    if (user) {
+      loginLink?.classList.add('hidden');
+      dropdown?.classList.remove('hidden');
+      if (nameDisplay) nameDisplay.textContent = user.username;
+    } else {
+      loginLink?.classList.remove('hidden');
+      dropdown?.classList.add('hidden');
+    }
+  }
+
+  // Toggle dropdown
+  document.getElementById('user-btn')?.addEventListener('click', () => {
+    document.getElementById('dropdown-menu')?.classList.toggle('hidden');
+  });
+
+  // Close dropdown on outside click
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('user-dropdown');
+    if (menu && !menu.contains(e.target as Node)) {
+      document.getElementById('dropdown-menu')?.classList.add('hidden');
+    }
+  });
+
+  // Logout
+  document.getElementById('logout-btn')?.addEventListener('click', () => {
+    localStorage.removeItem('token');
+    window.dispatchEvent(new CustomEvent('userchange'));
+    updateUI();
+    window.location.reload();
+  });
+
+  // Listen for user changes
+  window.addEventListener('userchange', updateUI);
+
+  // Initial render
+  updateUI();
+</script>

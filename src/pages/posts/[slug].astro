@@ -1,8 +1,19 @@
 ---
-import { getEntry } from 'astro:content';
+import { getCollection, getEntry } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Comments from '../../components/Comments.astro';
+import CommentSection from '../../components/CommentSection.astro';
 import LikeButton from '../../components/LikeButton.astro';
+import FavoriteButton from '../../components/FavoriteButton.astro';
+
+// 预渲染所有文章页面
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  return posts
+    .filter((p) => !p.data.draft)
+    .map((p) => ({ params: { slug: p.slug } }));
+}
 
 const { slug } = Astro.params;
 if (!slug) return new Response('Not Found', { status: 404 });
@@ -54,10 +65,13 @@ const readingTime = Math.max(1, Math.ceil((post.body?.length || 0) / 800));
     <!-- Content -->
     <div class="prose"><Content /></div>
 
-    <!-- Like -->
-    <LikeButton slug={post.slug} />
+    <!-- Like + Favorite -->
+    <div class="flex items-center gap-6 my-10 pt-6 border-t border-[var(--c-border)]">
+      <LikeButton slug={post.slug} />
+      <FavoriteButton slug={post.slug} title={title} />
+    </div>
 
     <!-- Comments -->
-    <Comments slug={post.slug} />
+    <CommentSection slug={post.slug} />
   </article>
 </BaseLayout>

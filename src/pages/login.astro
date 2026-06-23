@@ -1,0 +1,102 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const API_BASE = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3456';
+---
+
+<BaseLayout title="登录" description="登录博客账号" noIndex>
+  <div class="max-w-md mx-auto py-20 px-4">
+    <div class="text-center mb-10 animate-in animate-in-1">
+      <h1 class="text-3xl font-extrabold text-[var(--c-text)] mb-2">登录</h1>
+      <p class="text-[var(--c-text-muted)]">登录后可以评论、点赞和收藏文章</p>
+    </div>
+
+    <div class="card p-8 animate-in animate-in-2">
+      <form id="login-form" class="space-y-5">
+        <!-- Username -->
+        <div>
+          <label for="username" class="block text-sm font-medium text-[var(--c-text)] mb-1.5">用户名</label>
+          <input
+            type="text" id="username" name="username" autocomplete="username" required
+            class="w-full px-4 py-2.5 rounded-xl border-2 border-[var(--c-border)] bg-[var(--c-bg)] text-[var(--c-text)] outline-none transition-all focus:border-[var(--c-primary)] focus:shadow-[0_0_0_3px_rgba(99,102,241,0.15)]"
+            placeholder="请输入用户名"
+          />
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label for="password" class="block text-sm font-medium text-[var(--c-text)] mb-1.5">密码</label>
+          <input
+            type="password" id="password" name="password" autocomplete="current-password" required
+            class="w-full px-4 py-2.5 rounded-xl border-2 border-[var(--c-border)] bg-[var(--c-bg)] text-[var(--c-text)] outline-none transition-all focus:border-[var(--c-primary)] focus:shadow-[0_0_0_3px_rgba(99,102,241,0.15)]"
+            placeholder="请输入密码"
+          />
+        </div>
+
+        <!-- Error message -->
+        <div id="error-msg" class="text-sm text-red-500 hidden"></div>
+
+        <!-- Submit -->
+        <button type="submit" id="submit-btn" class="btn btn-primary w-full justify-center py-3 text-base">
+          登录
+        </button>
+      </form>
+
+      <!-- Register link -->
+      <p class="text-center text-sm text-[var(--c-text-muted)] mt-6">
+        还没有账号？<a href="/register" class="text-[var(--c-primary)] font-medium underline">立即注册</a>
+      </p>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  const API = document.getElementById('api-config')?.dataset.base || 'http://localhost:3456';
+  const form = document.getElementById('login-form') as HTMLFormElement;
+  const errorEl = document.getElementById('error-msg')!;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = (document.getElementById('username') as HTMLInputElement).value.trim();
+    const password = (document.getElementById('password') as HTMLInputElement).value;
+
+    if (!username || !password) {
+      errorEl.textContent = '请填写用户名和密码';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    submitBtn.textContent = '登录中...';
+    submitBtn.disabled = true;
+    errorEl.classList.add('hidden');
+
+    try {
+      const res = await fetch(`${API}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        errorEl.textContent = data.error || '登录失败';
+        errorEl.classList.remove('hidden');
+        submitBtn.textContent = '登录';
+        submitBtn.disabled = false;
+        return;
+      }
+
+      // Store token and redirect
+      localStorage.setItem('token', data.token);
+      window.dispatchEvent(new CustomEvent('userchange'));
+      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+      window.location.href = redirect;
+    } catch (err) {
+      errorEl.textContent = '网络错误，请稍后重试';
+      errorEl.classList.remove('hidden');
+      submitBtn.textContent = '登录';
+      submitBtn.disabled = false;
+    }
+  });
+</script>

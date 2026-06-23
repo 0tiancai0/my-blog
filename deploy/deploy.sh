@@ -26,8 +26,11 @@ tar -czf deploy.tar.gz \
   package.json \
   package-lock.json \
   public/ \
+  server/ \
+  ecosystem.config.cjs \
   --exclude="node_modules" \
-  --exclude="public/admin/index.html"  # Tina 生成的文件
+  --exclude="server/node_modules" \
+  --exclude="server/data"
 
 # 3. 上传
 echo ""
@@ -41,7 +44,7 @@ ssh ${SERVER_USER}@${SERVER_IP} << 'ENDSSH'
   set -e
 
   # 创建目录
-  mkdir -p /opt/my-blog /var/log/my-blog /opt/my-blog/public/uploads
+  mkdir -p /opt/my-blog /var/log/my-blog /opt/my-blog/public/uploads /opt/my-blog/server/data
 
   # 解压
   cd /opt/my-blog
@@ -51,10 +54,12 @@ ssh ${SERVER_USER}@${SERVER_IP} << 'ENDSSH'
   # 安装依赖（仅生产依赖）
   npm ci --production 2>/dev/null || npm install --omit=dev
 
-  # 创建上传目录
-  mkdir -p public/uploads
+  # 安装 server 依赖
+  cd /opt/my-blog/server
+  npm ci --production 2>/dev/null || npm install --omit=dev
+  cd /opt/my-blog
 
-  # 重启服务
+  # 重启服务（Astro + Fastify API）
   if command -v pm2 &> /dev/null; then
     pm2 reload ecosystem.config.cjs 2>/dev/null || pm2 start ecosystem.config.cjs
     pm2 save

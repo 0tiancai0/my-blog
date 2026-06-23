@@ -5,10 +5,13 @@
   "scripts": {
     "dev": "tinacms dev -c \"astro dev\"",
     "start": "astro dev",
-    "build": "tinacms build -c \"astro build\"",
+    "build": "tinacms build -c \"astro build && npx pagefind --site dist/client\" && node scripts/copy-pagefind.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "deploy": "bash -c \"bash deploy/deploy.sh\"",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
     "server:setup": "bash -c \"cat deploy/setup-server.sh | ssh root@106.14.22.212\"",
     "vercel": "NODE_OPTIONS=\"--require ./fix-hostname.cjs\" npx vercel",
     "vercel:deploy": "NODE_OPTIONS=\"--require ./fix-hostname.cjs\" npx vercel deploy",
@@ -22,6 +25,7 @@
     "@tinacms/astro": "^0.5.0",
     "@upstash/redis": "^1.38.0",
     "astro": "^5.7.13",
+    "busboy": "^1.6.0",
     "send": "^1.2.1",
     "tailwindcss": "^4.1.10",
     "tinacms": "^3.9.1"
@@ -29,6 +33,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@tinacms/cli": "^2.4.4",
+    "pagefind": "^1.5.2",
     "typescript": "^5.8.3"
   }
 }

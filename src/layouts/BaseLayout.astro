@@ -14,6 +14,7 @@ const { title, description, image, noIndex } = Astro.props;
 const siteTitle = "TianCai的博客";
 const fullTitle = title === siteTitle ? title : `${title} | ${siteTitle}`;
 const defaultDesc = '个人博客 — 记录技术思考与生活感悟';
+const API_BASE = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3456';
 ---
 
 <!doctype html>
@@ -42,6 +43,7 @@ const defaultDesc = '个人博客 — 记录技术思考与生活感悟';
     </script>
   </head>
   <body class="min-h-screen flex flex-col bg-[var(--c-bg)] text-[var(--c-text)]">
+    <span id="api-config" data-base={API_BASE} hidden></span>
     <Header />
     <main class="flex-1 w-full">
       <slot />

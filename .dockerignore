@@ -1,0 +1,13 @@
+node_modules
+server/node_modules
+dist
+.git
+.gitignore
+*.md
+.env
+.env.example
+.tina
+.vercel
+deploy.tar.gz
+data
+server/data

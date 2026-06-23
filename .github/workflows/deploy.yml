@@ -1,0 +1,83 @@
+name: Deploy to Alibaba Cloud
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd server && npm ci && cd ..
+
+      - name: Build
+        run: npm run build
+        env:
+          TINA_CLIENT_ID: ${{ secrets.TINA_CLIENT_ID }}
+          TINA_TOKEN: ${{ secrets.TINA_TOKEN }}
+          TINA_SEARCH_TOKEN: ${{ secrets.TINA_SEARCH_TOKEN }}
+
+      - name: Package
+        run: |
+          tar -czf deploy.tar.gz \
+            dist/ \
+            package.json \
+            package-lock.json \
+            public/ \
+            server/ \
+            ecosystem.config.cjs \
+            --exclude="node_modules" \
+            --exclude="server/data"
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ALIYUN_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.ALIYUN_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        run: |
+          scp deploy.tar.gz ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:/tmp/
+
+          ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} << 'EOF'
+            set -e
+            mkdir -p /opt/my-blog /var/log/my-blog /opt/my-blog/public/uploads /opt/my-blog/server/data
+
+            cd /opt/my-blog
+            tar -xzf /tmp/deploy.tar.gz
+            rm /tmp/deploy.tar.gz
+
+            # Install production deps
+            npm ci --production 2>/dev/null || npm install --omit=dev
+            cd server && npm ci --production 2>/dev/null || npm install --omit=dev && cd ..
+
+            # Restart PM2
+            if command -v pm2 &> /dev/null; then
+              pm2 reload ecosystem.config.cjs 2>/dev/null || pm2 start ecosystem.config.cjs
+              pm2 save
+            fi
+
+            echo "✅ Deploy complete!"
+          EOF
+
+      - name: Cleanup
+        run: rm deploy.tar.gz

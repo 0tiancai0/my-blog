@@ -1,52 +1,88 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import FileUpload from '../components/FileUpload.astro';
 ---
 
 <BaseLayout title="关于" description="关于我和这个博客">
   <div class="max-w-[var(--prose-width)] mx-auto py-16 animate-in animate-in-1">
-    <h1 class="text-3xl sm:text-4xl font-extrabold mb-2">👤 关于我</h1>
-    <p class="text-[var(--c-text-muted)] mb-10">浙江大学学生 · 技术爱好者</p>
 
+    <!-- Profile header -->
+    <div class="flex flex-col sm:flex-row items-center gap-6 mb-12">
+      <div class="w-28 h-28 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-4xl font-extrabold shadow-lg shrink-0">
+        TC
+      </div>
+      <div class="text-center sm:text-left">
+        <h1 class="text-3xl font-extrabold text-[var(--c-text)] mb-1">TianCai</h1>
+        <p class="text-[var(--c-text-muted)] text-lg">浙江大学学生 · 全栈开发者 · 技术爱好者</p>
+        <div class="flex items-center gap-3 mt-3 justify-center sm:justify-start">
+          <a href="https://github.com/0tiancai0" target="_blank" rel="noopener" class="text-sm text-[var(--c-text-muted)] hover:text-[var(--c-primary)] transition-colors no-underline">GitHub</a>
+          <span class="text-[var(--c-border)]">·</span>
+          <span class="text-sm text-[var(--c-text-muted)]">hello@example.com</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- About me -->
     <div class="prose">
-      <p>你好！我是浙江大学的学生，喜欢探索新事物，记录学习过程中的思考与收获。这个博客用来分享我的学习笔记和技术心得。</p>
+      <h2>👋 关于我</h2>
+      <p>
+        你好！我是浙江大学的学生，对 Web 开发和系统设计充满热情。
+        我喜欢把复杂的概念转化成简洁实用的工具，用代码解决实际问题。
+        这个博客记录了我的学习历程、项目经验和技术思考。
+      </p>
 
-      <h2>博客主题</h2>
+      <h2>🛠️ 技能</h2>
+      <div class="flex flex-wrap gap-2 not-prose my-4">
+        {['TypeScript', 'Node.js', 'React', 'Vue', 'Astro', 'Python', 'Docker', 'SQLite', 'Git', 'Linux', 'Nginx', 'Tailwind CSS'].map(skill => (
+          <span class="tag text-xs">{skill}</span>
+        ))}
+      </div>
+
+      <h2>🎓 经历</h2>
+      <div class="relative pl-6 border-l-2 border-[var(--c-border)] space-y-6 my-6">
+        <div class="relative">
+          <div class="absolute -left-[25px] top-1 w-3 h-3 rounded-full bg-[var(--c-primary)]"></div>
+          <h4 class="font-semibold text-[var(--c-text)] m-0">浙江大学</h4>
+          <p class="text-sm text-[var(--c-text-muted)] m-0">本科在读 · 软件工程专业</p>
+          <p class="text-xs text-[var(--c-text-soft)] mt-1">2022 - 至今</p>
+        </div>
+        <div class="relative">
+          <div class="absolute -left-[25px] top-1 w-3 h-3 rounded-full bg-[var(--c-primary)]"></div>
+          <h4 class="font-semibold text-[var(--c-text)] m-0">个人博客项目</h4>
+          <p class="text-sm text-[var(--c-text-muted)] m-0">从0到1构建全栈博客系统</p>
+          <p class="text-xs text-[var(--c-text-soft)] mt-1">2025 - 至今</p>
+        </div>
+      </div>
+
+      <h2>🚀 项目</h2>
+      <div class="space-y-4 not-prose my-6">
+        <div class="card p-5">
+          <h4 class="font-semibold text-[var(--c-text)] mb-1">TianCai的博客</h4>
+          <p class="text-sm text-[var(--c-text-muted)] mb-2">全栈个人博客系统，支持 Markdown 编辑、用户认证、评论互动、全文搜索</p>
+          <div class="flex flex-wrap gap-1.5">
+            {['Astro', 'TinaCMS', 'Fastify', 'SQLite', 'Docker', 'Nginx'].map(t => <span class="tag text-xs">{t}</span>)}
+          </div>
+        </div>
+      </div>
+
+      <h2>📝 关于这个博客</h2>
       <ul>
-        <li>🌐 Web 前端开发 (React, Vue, Astro)</li>
-        <li>⚡ 全栈开发 (Node.js, TypeScript)</li>
-        <li>🛠️ 工具与效率提升</li>
-        <li>📝 技术笔记与教程</li>
+        <li><strong>Astro 5</strong> + <strong>TinaCMS</strong> — 内容管理与 Markdown 编辑</li>
+        <li><strong>Fastify</strong> + <strong>SQLite</strong> — 自建后端 API（认证、评论、点赞、收藏）</li>
+        <li><strong>Pagefind</strong> — 全文搜索，支持中文</li>
+        <li><strong>Docker Compose</strong> — 一键部署（Nginx + Astro + API）</li>
+        <li><strong>GitHub Actions</strong> — CI/CD 自动部署到阿里云</li>
+        <li><strong>Tailwind CSS</strong> — 响应式设计 + 暗色模式</li>
       </ul>
 
-      <h2>关于这个博客</h2>
-      <ul>
-        <li><strong>Astro</strong> + <strong>TinaCMS</strong> — 内容管理与编辑</li>
-        <li><strong>Giscus</strong> — GitHub 账号评论系统</li>
-        <li><strong>Upstash Redis</strong> — 点赞（Serverless）</li>
-        <li><strong>Vercel Blob</strong> — 文件上传</li>
-      </ul>
-
-      <h2>联系我</h2>
+      <h2>📬 联系我</h2>
       <ul>
         <li>GitHub: <a href="https://github.com/0tiancai0" target="_blank" rel="noopener">@0tiancai0</a></li>
-        <li>Email: <a href="mailto:hello@example.com">hello@example.com</a></li>
+        <li>Email: <a href="mailto:3250408119@qq.com">3150408119@qq.com</a></li>
       </ul>
 
       <blockquote>
-        <p>💡 想修改这些内容？编辑 <code>src/pages/about.astro</code> 文件，或者通过 <a href="/admin">TinaCMS 管理后台</a> 在线修改。</p>
+        <p>💡 想修改这些内容？编辑 <code>src/pages/about.astro</code> 文件，或者通过 <a href="/admin">TinaCMS 管理后台</a> 管理博客文章。</p>
       </blockquote>
-    </div>
-
-    <!-- 文件上传 -->
-    <div class="mt-16 pt-8 border-t border-[var(--c-border)]">
-      <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
-        <svg class="w-5 h-5 text-[var(--c-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-        </svg>
-        文件分享
-      </h3>
-      <FileUpload />
     </div>
   </div>
 </BaseLayout>

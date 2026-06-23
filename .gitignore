@@ -30,3 +30,6 @@ server/data/
 .vercel
 deploy.tar.gz
 fix-hostname.cjs
+
+# Pagefind search index (generated)
+public/pagefind/
