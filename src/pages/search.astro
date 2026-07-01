@@ -231,11 +231,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   })();
 </script>
 
-<!-- 只在生产构建后加载 pagefind（dev 模式下 script 标签会 404，这是预期行为） -->
-<script is:inline src="/pagefind/pagefind.js" onerror="
-  // Pagefind not built yet — handled by JS logic above
-  this.remove();
-"></script>
+<script is:inline src="/pagefind/pagefind.js"></script>
 
 <style is:global>
   @keyframes spin {

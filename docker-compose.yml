@@ -25,6 +25,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - TINA_CLIENT_ID=${TINA_CLIENT_ID}
+        - TINA_TOKEN=${TINA_TOKEN}
+        - TINA_SEARCH_TOKEN=${TINA_SEARCH_TOKEN}
     container_name: blog-astro
     environment:
       - PORT=4321
